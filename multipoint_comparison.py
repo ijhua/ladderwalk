@@ -62,62 +62,62 @@ for f in folders:
         #back left
         df_ankle = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"left ankle")
         df_toes = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"left toes")
+    #right side
+    if run[0] == "R":
+        if subject in left_handed:
+            limb_front = "Nondominant Front"
+            limb_back = "Nondominant Back"
+        elif subject in right_handed:
+            limb_front = "Dominant Front"
+            limb_back = "Dominant Back"
+        #split all the limbs
+        #frontright
+        df_wrist = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right wrist")
+        df_fingers = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right fingers")
+        #df_elbow = extract_limbs(df,"right elbow")
+        #back right
+        df_ankle = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right ankle")
+        df_toes = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right toes")
+    #filter by likelihood
+    #frontleft
+    df_wrist = likelihood_filter(df_wrist,likelihood_threshold)
+    df_fingers = likelihood_filter(df_fingers,likelihood_threshold)
+    #df_elbow = likelihood_filter(df_elbow,likelihood_threshold)
+    #back left
+    df_ankle = likelihood_filter(df_ankle,likelihood_threshold)
+    df_toes = likelihood_filter(df_toes,likelihood_threshold)
 
-        #filter by likelihood
-        #frontleft
-        df_wrist = likelihood_filter(df_wrist,likelihood_threshold)
-        df_fingers = likelihood_filter(df_fingers,likelihood_threshold)
-        #df_elbow = likelihood_filter(df_elbow,likelihood_threshold)
-        #back left
-        df_ankle = likelihood_filter(df_ankle,likelihood_threshold)
-        df_toes = likelihood_filter(df_toes,likelihood_threshold)
+    #get the x velocity peaks
+    wrist_forward_list = find_clusters(df_wrist)
+    fingers_forward_list = find_clusters(df_fingers)
 
-        #get the x velocity peaks
-        '''wrist_forward_list,wrist_backward_list = visible_limb_x_velocity_peaks(df_wrist,xheight,xdist,"L")
-        fingers_forward_list,fingers_backward_list = visible_limb_x_velocity_peaks(df_fingers,xheight,xdist,"L")
+    ankle_forward_list = find_clusters(df_ankle)
+    toes_forward_list = find_clusters(df_toes)
 
-        ankle_forward_list,ankle_backward_list = visible_limb_x_velocity_peaks(df_ankle,xheight,xdist,"L")
-        toes_forward_list,toes_backward_list = visible_limb_x_velocity_peaks(df_toes,xheight,xdist,"L")'''
-        '''wrist_forward_list = zero_velocity_index(df_wrist,'x',0,zero_threshold)
-        fingers_forward_list = zero_velocity_index(df_fingers,'x',0,zero_threshold)
-        ankle_forward_list = zero_velocity_index(df_ankle,'x',0,zero_threshold)
-        toes_forward_list = zero_velocity_index(df_toes,'x',0,zero_threshold)'''
+    #join the two points on the front left limb
+    front_forward = peak_list_union(wrist_forward_list,fingers_forward_list)
+    front_forward = remove_close(sorted(front_forward))
 
-        '''wrist_forward_list = find_step_peaks(df_wrist)
-        fingers_forward_list = find_step_peaks(df_fingers)
+    #join two points on the back left limb
+    back_forward = peak_list_union(ankle_forward_list,toes_forward_list)
+    back_forward = remove_close(sorted(back_forward))
 
-        ankle_forward_list = find_step_peaks(df_ankle)
-        toes_forward_list = find_step_peaks(df_toes)'''
+    #get y velocity peaks
+    wrist_up_list, wrist_down_list = visible_limb_y_velocity_peaks(df_wrist,yheight,ydist)
+    fingers_up_list, fingers_down_list = visible_limb_y_velocity_peaks(df_fingers,yheight,ydist)
 
-        #join the two points on the front left limb
-        '''fl_forward = peak_list_union(wrist_forward_list,fingers_forward_list)
-        fl_backward = peak_list_union(wrist_backward_list,fingers_backward_list)
+    ankle_up_list, ankle_down_list = visible_limb_y_velocity_peaks(df_ankle,yheight,ydist)
+    toes_up_list, toes_down_list = visible_limb_y_velocity_peaks(df_toes,yheight,ydist)
 
-        fl_forward = remove_close(sorted(fl_forward))
+    #join front lists
+    front_up = peak_list_union(wrist_up_list,fingers_up_list)
+    #join back lists
+    back_up = peak_list_union(ankle_up_list,toes_up_list)
 
-        #join two points on the back left limb
-        bl_forward = peak_list_union(ankle_forward_list,toes_forward_list)
-        bl_backward = peak_list_union(ankle_backward_list,toes_backward_list)
-
-        bl_forward = remove_close(sorted(bl_forward))'''
-
-        #get y velocity peaks
-        wrist_up_list, wrist_down_list = visible_limb_y_velocity_peaks(df_wrist,yheight,ydist)
-        fingers_up_list, fingers_down_list = visible_limb_y_velocity_peaks(df_fingers,yheight,ydist)
-
-        ankle_up_list, ankle_down_list = visible_limb_y_velocity_peaks(df_ankle,yheight,ydist)
-        toes_up_list, toes_down_list = visible_limb_y_velocity_peaks(df_toes,yheight,ydist)
-
-        #join front lists
-        fl_up = peak_list_union(wrist_up_list,fingers_up_list)
-        fl_down = peak_list_union(wrist_down_list,fingers_down_list)
-        #join back lists
-        bl_up = peak_list_union(ankle_up_list,toes_up_list)
-        bl_down = peak_list_union(ankle_down_list,toes_down_list)
-
+    if run[0] == "L":
         #number of x peaks is the number of total steps. I don't think there are really ever any backward peaks, so we'll just ignore them for now
-        total_steps_fl = number_of_clusters(df_fingers)#len(fl_forward)#-len(fl_backward)
-        total_steps_bl = number_of_clusters(df_toes)#len(bl_forward)#-len(bl_backward)
+        total_steps_fl = len(front_forward)#-len(fl_backward)
+        total_steps_bl = len(back_forward)#-len(bl_backward)
         total_steps_fr = np.nan
         total_steps_br = np.nan
 
@@ -135,81 +135,12 @@ for f in folders:
         hit_count_fr = np.nan
         hit_count_br = np.nan
 
-    #right side
     if run[0] == "R":
-        if subject in left_handed:
-            limb_front = "Nondominant Front"
-            limb_back = "Nondominant Back"
-        elif subject in right_handed:
-            limb_front = "Dominant Front"
-            limb_back = "Dominant Back"
-        #split all the limbs
-        #frontright
-        df_wrist = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right wrist")
-        df_fingers = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right fingers")
-        #df_elbow = extract_limbs(df,"right elbow")
-        #back right
-        df_ankle = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right ankle")
-        df_toes = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right toes")
-
-        #filter by likelihood
-        #frontright
-        df_wrist = likelihood_filter(df_wrist,likelihood_threshold)
-        df_fingers = likelihood_filter(df_fingers,likelihood_threshold)
-        #df_elbow = likelihood_filter(df_elbow,likelihood_threshold)
-        #back right
-        df_ankle = likelihood_filter(df_ankle,likelihood_threshold)
-        df_toes = likelihood_filter(df_toes,likelihood_threshold)
-
-        #get the x velocity peaks
-        '''wrist_forward_list,wrist_backward_list = visible_limb_x_velocity_peaks(df_wrist,xheight,xdist,"R")
-        fingers_forward_list,fingers_backward_list = visible_limb_x_velocity_peaks(df_fingers,xheight,xdist,"R")
-
-        ankle_forward_list,ankle_backward_list = visible_limb_x_velocity_peaks(df_ankle,xheight,xdist,"R")
-        toes_forward_list,toes_backward_list = visible_limb_x_velocity_peaks(df_toes,xheight,xdist,"R")'''
-
-        '''wrist_forward_list = zero_velocity_index(df_wrist,'x',zero_threshold,0)
-        fingers_forward_list = zero_velocity_index(df_fingers,'x',zero_threshold,0)
-        ankle_forward_list = zero_velocity_index(df_ankle,'x',zero_threshold,0)
-        toes_forward_list = zero_velocity_index(df_toes,'x',zero_threshold,0)
-'''
-        '''wrist_forward_list = find_step_peaks(df_wrist)
-        fingers_forward_list = find_step_peaks(df_fingers)
-
-        ankle_forward_list = find_step_peaks(df_ankle)
-        toes_forward_list = find_step_peaks(df_toes)'''
-
-        #join the two points on the front right limb
-        '''fr_forward = peak_list_union(wrist_forward_list,fingers_forward_list)
-        fr_backward = peak_list_union(wrist_backward_list,fingers_backward_list)
-
-        fr_forward = remove_close(sorted(fr_forward))
-
-        #join two points on the back right limb
-        br_forward = peak_list_union(ankle_forward_list,toes_forward_list)
-        br_backward = peak_list_union(ankle_backward_list,toes_backward_list)
-
-        br_forward = remove_close(sorted(br_forward))
-'''
-        #get y velocity peaks
-        wrist_up_list, wrist_down_list = visible_limb_y_velocity_peaks(df_wrist,yheight,ydist)
-        fingers_up_list, fingers_down_list = visible_limb_y_velocity_peaks(df_fingers,yheight,ydist)
-
-        ankle_up_list, ankle_down_list = visible_limb_y_velocity_peaks(df_ankle,yheight,ydist)
-        toes_up_list, toes_down_list = visible_limb_y_velocity_peaks(df_toes,yheight,ydist)
-
-        #join front lists
-        fr_up = peak_list_union(wrist_up_list,fingers_up_list)
-        fr_down = peak_list_union(wrist_down_list,fingers_down_list)
-        #join back lists
-        br_up = peak_list_union(ankle_up_list,toes_up_list)
-        br_down = peak_list_union(ankle_down_list,toes_down_list)
-
         #number of x peaks is the number of total steps. I don't think there are really ever any backward peaks, so we'll just ignore them for now
         total_steps_fl = np.nan
         total_steps_bl = np.nan
-        total_steps_fr = number_of_clusters(df_fingers)#len(fr_forward)#-len(fr_backward)
-        total_steps_br = number_of_clusters(df_toes)#len(br_forward)#-len(br_backward)
+        total_steps_fr = len(front_forward)#-len(fr_backward)
+        total_steps_br = len(back_forward)#-len(br_backward)
 
         #figure out the y position threshold. it'll be when vx and vy are approximately 0
         y_pos_threshold_front,y_pos_threshold_back = zero_velocity_y_position("r")
@@ -238,7 +169,6 @@ for f in folders:
 score_df = pd.DataFrame(scores,columns=score_cols)
 score_df["date"] = pd.to_datetime(score_df["date"])
 
-
 #human_scores
 test_human = pd.read_csv("/home/ml/Documents/updated_human_scores.csv")
 #test_human = test_human.ffill(axis=0)
@@ -247,40 +177,7 @@ test_human['date'] = pd.to_datetime(test_human['date'])
 all_score = score_df.merge(test_human,on=["subject","date","run","limb"])
 all_score = all_score.dropna()
 
-all_score.to_csv("/home/ml/Documents/comparison_scores_4_mc_rats.csv")
-
-'''diff_df=pd.DataFrame()
-
-diff_df["hit_diff"] = all_score["comp_hits"] - all_score["human_hit"]
-diff_df["miss_diff"] = all_score["comp_misses"] - all_score["human_miss"]
-diff_df["step_diff"] = all_score["comp_steps"] - all_score["human_steps"]
-
-plt.close()
-plt.hist(diff_df["hit_diff"],label='Multipoint Difference',alpha=0.5)
-plt.legend()
-plt.title("Difference in number of hits")
-plt.xlabel("Computation - Human")
-plt.ylabel("Number of Runs")
-#plt.savefig("/home/ml/Documents/comp_z_human_hit_diff.png")
-plt.show()
-
-plt.close()
-plt.hist(diff_df["miss_diff"],label='Multipoint Difference',alpha=0.5)
-plt.legend()
-plt.title("Difference in number of misses")
-plt.xlabel("Computation - Human")
-plt.ylabel("Number of Runs")
-#plt.savefig("/home/ml/Documents/comp_z_human_miss_diff.png")
-plt.show()
-
-plt.close()
-plt.hist(diff_df["step_diff"],label='Multipoint Difference',alpha=0.5)
-plt.legend()
-plt.title("Difference in number of steps")
-plt.xlabel("Computation - Human")
-plt.ylabel("Number of Runs")
-#plt.savefig("/home/ml/Documents/comp_z_human_step_diff.png")
-plt.show()'''
+all_score.to_csv("/home/ml/Documents/comparison_scores_6_mc_rats_clustering.csv")
 
 calcs=[]
 
@@ -310,19 +207,20 @@ for index,row in all_score.iterrows():
         comp_score = np.nan
     comp_steps = row["comp_steps"]
     comp_slips = row["comp_misses"]
+    comp_hits = row['comp_hits']
     human_score = row["human_miss"]/row["human_steps"]*100
     human_steps = row["human_steps"]
     human_miss = row["human_miss"]
-    calcs.append([subject,week,limb,comp_score,comp_steps,comp_slips,human_score,human_steps,human_miss])
-calc_df = pd.DataFrame(calcs,columns=["subject","week","limb","comp_score","comp_steps","comp_misses","human_score","human_steps","human_misses"])
+    human_hits = row["human_hit"]
+    calcs.append([subject,week,limb,comp_score,comp_steps,comp_slips,comp_hits,human_score,human_steps,human_miss,human_hits])
+calc_df = pd.DataFrame(calcs,columns=["subject","week","limb","comp_score","comp_steps","comp_misses","comp_hits","human_score","human_steps","human_misses","human_hits"])
 #calc_df = calc_df.round({"week":0})
-
 
 #for non-averaged
 new_calc = calc_df
 new_calc["step_diff"] = new_calc["comp_steps"]-new_calc["human_steps"]
 new_calc["miss_diff"] = new_calc["comp_misses"]-new_calc["human_misses"]
-
+new_calc["hit_diff"] = new_calc["comp_hits"]-new_calc["human_hits"]
 
 cfd = new_calc.loc[new_calc["limb"] == "Dominant Front"]
 
@@ -353,6 +251,13 @@ for limb in calc_limbs:
     plt.ylabel("Number of Runs")
     plt.show()
 
+    plt.close()
+    plt.hist(limb["hit_diff"],label='Multipoint Difference',alpha=0.5)
+    plt.legend()
+    plt.title("Difference in number of hits "+name)
+    plt.xlabel("Computation - Human")
+    plt.ylabel("Number of Runs")
+    plt.show()
 
 df_new = calc_df.groupby(["week","limb"])["comp_score","comp_steps","comp_misses","human_score","human_steps","human_misses"].agg(["mean",'sem'])
 
@@ -378,7 +283,7 @@ for limb in limbs:
     plt.rc('ytick')
     plt.errorbar(limb["week"],limb["comp_score"]["mean"],yerr=limb["comp_score"]["sem"] , uplims=True, lolims=True,label="Computational")
     plt.errorbar(limb["week"],limb["human_score"]["mean"],yerr=limb["human_score"]["sem"] , uplims=True, lolims=True,label="Human")
-    plt.title( name+" MC Rats")
+    plt.title( name+" Slip Difference")
     plt.xlabel("Week")
     plt.ylabel("%slip")
     plt.ylim(bottom=0)
@@ -391,7 +296,7 @@ for limb in limbs:
     plt.rc('ytick')
     plt.errorbar(limb["week"],limb["comp_steps"]["mean"],yerr=limb["comp_steps"]["sem"] , uplims=True, lolims=True,label="Computational")
     plt.errorbar(limb["week"],limb["human_steps"]["mean"],yerr=limb["human_steps"]["sem"] , uplims=True, lolims=True,label="Human")
-    plt.title( name+" MC Rats")
+    plt.title( name+" Slip Difference")
     plt.xlabel("Week")
     plt.ylabel("Number of Steps")
     plt.ylim(bottom=0)
@@ -404,7 +309,7 @@ for limb in limbs:
     plt.rc('ytick')
     plt.errorbar(limb["week"],limb["comp_misses"]["mean"],yerr=limb["comp_misses"]["sem"] , uplims=True, lolims=True,label="Computational")
     plt.errorbar(limb["week"],limb["human_misses"]["mean"],yerr=limb["human_misses"]["sem"] , uplims=True, lolims=True,label="Human")
-    plt.title( name+" MC Rats")
+    plt.title( name+" Slip Difference")
     plt.xlabel("Week")
     plt.ylabel("Number of Slips")
     plt.ylim(bottom=0)

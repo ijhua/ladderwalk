@@ -89,7 +89,7 @@ def find_y_position_peaks(direction):
     return front_peaks[0],back_peaks[0]
 
 
-def number_of_clusters(df):
+def find_clusters(df):
     db = DBSCAN(eps = 10, min_samples = 3).fit(df)
     core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
     core_samples_mask[db.core_sample_indices_] = True
@@ -100,9 +100,9 @@ def number_of_clusters(df):
     cluster_center = []
     for k in unique_labels:
         class_member_mask = (labels == k)
-        if len(front[class_member_mask & core_samples_mask].index)>1:
-            center = round(median(list(front[class_member_mask & core_samples_mask].index)),0)
+        if len(df[class_member_mask & core_samples_mask].index)>1:
+            center = round(median(list(df[class_member_mask & core_samples_mask].index)),0)
             cluster_center.append(center)
         else:
             continue
-    return cluster_center 
+    return cluster_center
