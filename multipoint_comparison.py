@@ -95,19 +95,18 @@ for f in folders:
     toes_forward_list = find_clusters(df_toes)
 
     #join the two points on the front left limb
-    front_forward = peak_list_union(wrist_forward_list,fingers_forward_list)
-    front_forward = remove_close(sorted(front_forward))
+    front_forward = fingers_forward_list
+    #front_forward = remove_close(sorted(front_forward))
 
     #join two points on the back left limb
-    back_forward = peak_list_union(ankle_forward_list,toes_forward_list)
-    back_forward = remove_close(sorted(back_forward))
+    back_forward = toes_forward_list
+    #back_forward = remove_close(sorted(back_forward))
 
-    #get y velocity peaks
-    wrist_up_list, wrist_down_list = visible_limb_y_velocity_peaks(df_wrist,yheight,ydist)
-    fingers_up_list, fingers_down_list = visible_limb_y_velocity_peaks(df_fingers,yheight,ydist)
+    #figure out the y position threshold. it'll be when vx and vy are approximately 0
+    y_pos_threshold_front,y_pos_threshold_back = zero_velocity_y_position()
 
-    ankle_up_list, ankle_down_list = visible_limb_y_velocity_peaks(df_ankle,yheight,ydist)
-    toes_up_list, toes_down_list = visible_limb_y_velocity_peaks(df_toes,yheight,ydist)
+    y_pos_peaks_front,y_pos_peaks_back = find_y_position_peaks(y_pos_threshold_front,y_pos_threshold_back,ydist)
+
 
     #join front lists
     front_up = peak_list_union(wrist_up_list,fingers_up_list)
@@ -121,10 +120,6 @@ for f in folders:
         total_steps_fr = np.nan
         total_steps_br = np.nan
 
-        #figure out the y position threshold. it'll be when vx and vy are approximately 0
-        y_pos_threshold_front,y_pos_threshold_back = zero_velocity_y_position("L")
-
-        y_pos_peaks_front,y_pos_peaks_back = find_y_position_peaks("L")
         slip_count_fl = len(y_pos_peaks_front)
         slip_count_bl = len(y_pos_peaks_back)
         slip_count_fr = np.nan
@@ -142,10 +137,7 @@ for f in folders:
         total_steps_fr = len(front_forward)#-len(fr_backward)
         total_steps_br = len(back_forward)#-len(br_backward)
 
-        #figure out the y position threshold. it'll be when vx and vy are approximately 0
-        y_pos_threshold_front,y_pos_threshold_back = zero_velocity_y_position("r")
 
-        y_pos_peaks_front,y_pos_peaks_back = find_y_position_peaks("r")
         slip_count_fl = np.nan
         slip_count_bl = np.nan
         slip_count_fr = len(y_pos_peaks_front)

@@ -59,38 +59,31 @@ def zero_velocity_index(df,coord,top_r,bottom_r):
     a = np.gradient(df[coord])
     return df.loc[np.where(np.logical_and(a<top_r,a>-bottom_r))].index
 
-def zero_velocity_y_position(direction):
-    all_range = 0.6
-    #index of dataframe where x velocity is close to 0
-    v_x_zero_wrist = zero_velocity_index(df_wrist,'x',all_range,all_range)
-    #index of dataframe where y velocity is close to 0
-    v_y_zero_wrist = zero_velocity_index(df_wrist,'y',all_range,all_range)
+def zero_velocity_y_position():
+    all_range = 0.4
 
     v_x_zero_fingers = zero_velocity_index(df_fingers,'x',all_range,all_range)
     v_y_zero_fingers = zero_velocity_index(df_fingers,'y',all_range,all_range)
 
-    v_x_zero_ankle = zero_velocity_index(df_ankle,'x',all_range,all_range)
-    v_y_zero_ankle = zero_velocity_index(df_ankle,'y',all_range,all_range)
-
     v_x_zero_toes = zero_velocity_index(df_toes,'x',all_range,all_range)
     v_y_zero_toes = zero_velocity_index(df_toes,'y',all_range,all_range)
 
-    v_zero_front = list((set(v_x_zero_wrist) | set(v_y_zero_wrist))&(set(v_x_zero_fingers)|set(v_y_zero_fingers)))
-    v_zero_back = list((set(v_x_zero_ankle)| set(v_y_zero_ankle))&(set(v_x_zero_toes)|set(v_y_zero_toes)))
+    v_zero_front = list((set(v_x_zero_fingers)|set(v_y_zero_fingers)))
+    v_zero_back = list((set(v_x_zero_toes)|set(v_y_zero_toes)))
 
-    y_pos_front = df_fingers["y"][v_zero_front].max()+9
-    y_pos_back = df_toes["y"][v_zero_back].max()+9
+    y_pos_front = (df_fingers["y"][v_zero_front]).max()+13
+    y_pos_back = (df_toes["y"][v_zero_back]).max()+13
 
-    return y_pos_front,y_pos_back
+    return y_pos_front, y_pos_back
 
-def find_y_position_peaks(direction):
-    front_peaks = find_peaks(df_fingers['y'],height = y_pos_threshold_front,distance=ydist,prominence=1)
-    back_peaks = find_peaks(df_toes['y'],height = y_pos_threshold_back,distance=ydist,prominence=1)
+def find_y_position_peaks(front,back,dist):
+    front_peaks = find_peaks(df_fingers['y'],height = front,distance=dist,prominence=1)
+    back_peaks = find_peaks(df_toes['y'],height = back,distance=dist,prominence=1)
     return front_peaks[0],back_peaks[0]
 
 
 def find_clusters(df):
-    db = DBSCAN(eps = 10, min_samples = 3).fit(df)
+    db = DBSCAN(eps = 25, min_samples = 3).fit(df)
     core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
     core_samples_mask[db.core_sample_indices_] = True
     labels = db.labels_
