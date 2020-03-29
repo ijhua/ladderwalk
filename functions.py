@@ -22,7 +22,7 @@ def likelihood_filter(df,threshold):
 
 def not_outliers(data):
     z = np.abs(stats.zscore(data))
-    return np.where(z<1.8)
+    return np.where(z<2)
 
 def visible_limb_x_velocity_peaks(df,height,distance,direction):
     if direction.upper() == "R":
@@ -76,10 +76,9 @@ def zero_velocity_y_position():
 
     return y_pos_front, y_pos_back
 
-def find_y_position_peaks(front,back,dist):
-    front_peaks = find_peaks(df_fingers['y'],height = front,distance=dist,prominence=1)
-    back_peaks = find_peaks(df_toes['y'],height = back,distance=dist,prominence=1)
-    return front_peaks[0],back_peaks[0]
+def find_y_position_peaks(df,thresh,dist):
+    peaks = find_peaks(df['y'],height = thresh,distance=dist,prominence=1)
+    return peaks[0]
 
 
 def find_clusters(df):
