@@ -1,7 +1,9 @@
 # read the file
 rats = ["MC61","MC78","MC87","MC30","MC70","MC45"]
+#define handedness of the rats
 right_handed = ["MC45","MC61","MC78","MC87","MC30","MC70"]
 left_handed = []
+
 folders = []
 for rat in rats:
     folders+=glob.glob("/home/ml/Documents/Not_TADSS_Videos/"+rat+"/cut/dlc_output_16-810/*.h5")
@@ -9,6 +11,7 @@ for rat in rats:
 scores = []
 score_cols = ["subject", "date", "run", "crossing","limb","comp_hits","comp_misses","comp_steps"]
 for f in folders:
+
     df = pd.read_hdf(f)
     name=f.split("/")[8]
     run = name.split("_")[2]
