@@ -1,8 +1,35 @@
-#open and separate out right or left limbs from multiindex dataframes
 def func(x,a,b,c):
+    '''
+    A quadratic equation for use in curvefitting
+    ...
+    Parameters
+    ----------
+    x: 1d array. x values for the function
+    a: number. quadratic coefficient
+    b: number. linear coefficient
+    c: number. constant
+
+    Returns
+    -------
+    A quadradtic equation
+    '''
     return a*x**2+b*x+c
 
 def extract_limbs(df,network, limb):
+    '''
+    Separate the dataframe by limb
+    ...
+    Parameters
+    ----------
+    df: dataframe
+    network: str. the first level of the multi-index.
+    limb: str. the name of the column of the point in question as a string
+
+    Returns
+    -------
+    A dataframe with just one point's x,y,and likelihood selected.
+    The y coordinates have also had the curve deleted from it.
+    '''
     df = df[network][limb]
     base  =  func(df['x'],*np.polyfit(rung_x,rung_y,2))
     df2 = pd.DataFrame()
@@ -11,20 +38,53 @@ def extract_limbs(df,network, limb):
     df2['likelihood'] = df['likelihood']
     return df2
 
-def likelihood_filter(df,threshold):
+def likelihood_filter(df,threshold, fill=True):
+    '''
+    Parameters
+    ----------
+    df: dataframe
+    threshold: number. the likelihood thresold that each point must be greater than or equal to
+    fill: Boolean. determines if we fill NaNs in between. Default=True
+
+    Returns
+    -------
+    A dataframe with points with confidence less than the specified threshold
+    '''
     df.loc[df['likelihood']<=threshold] = np.nan
     df2 = df
-    df2 = df2.ffill().add(df.bfill()).div(2)
+    if fill == True:
+        df2 = df2.ffill().add(df.bfill()).div(2)
     #df2 = df2.ffill()
     df2 = df2.dropna()
     df2 = df2.reset_index(drop=True)
     return df2
 
 def not_outliers(data):
+    '''
+    Parameters
+    ----------
+    data: 1d array
+
+    Returns
+    -------
+    a numpy array of the indexes of data with a z score less than 2
+    '''
     z = np.abs(stats.zscore(data))
     return np.where(z<2)
 
 def visible_limb_x_velocity_peaks(df,height,distance,direction):
+    '''
+    Parameters
+    ----------
+    df: dataframe
+    height: number or nd array. from scipy.signal.find_peaks
+    distance: number. from scipy.signal.find_peaks
+    direction: str. "R" or "L" for the direction that the rat is going
+
+    Returns
+    -------
+    List of indexes of peaks in the "forward" and "backward" direction
+    '''
     if direction.upper() == "R":
         forward_x = find_peaks((np.gradient(df['x'])),height=height,distance=distance,prominence=1)#argrelmin(np.gradient(df['x']),mode='wrap')
         backward_x = find_peaks(-1*np.gradient(df['x']),height=height,distance=distance)
@@ -34,11 +94,32 @@ def visible_limb_x_velocity_peaks(df,height,distance,direction):
     return forward_x[0], backward_x[0]
 
 def visible_limb_y_velocity_peaks(df,height,distance):
+    '''
+    Parameters
+    ----------
+    df: dataframe
+    height: number or nd array
+    distance: number
+
+    Returns
+    -------
+    List of indexes that go upward and downward
+    '''
     up_y = find_peaks(-1*np.gradient(df['y']),height=height,distance=distance)
     down_y = find_peaks(np.gradient(df['y']),height=height,distance=distance)
     return up_y[0],down_y[0]
 
 def peak_list_union(list1,list2):
+    '''
+    Parameters
+    ----------
+    list1: list. first list that we want to join
+    list2: list. second list that we want to join
+
+    Returns
+    -------
+    List that is the union of the two input lists.
+    '''
     lst = list(set(list1) | set(list2))
     return lst
 
@@ -57,7 +138,7 @@ def remove_close(lst):
 def zero_velocity_index(df,coord,top_r,bottom_r):
     #give the dataframe where the coord velocity is close to 0
     a = np.gradient(df[coord])
-    return df.loc[np.where(np.logical_and(a<top_r,a>-bottom_r))].index
+    return df.loc[np.where(np.logical_and(a<top_r,a>-bottom_r))].indexss
 
 def zero_velocity_y_position():
     all_range = 0.4

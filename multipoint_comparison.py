@@ -45,7 +45,7 @@ for f in folders:
         rung_list.append("rung_"+str(i))
     #filter each column of the rung dataframe based on likelihood
     for rung in rung_list:
-        rung_df[rung]=likelihood_filter(rung_df[rung],0.8)
+        rung_df[rung]=likelihood_filter(rung_df[rung],0.8, fill=False)
     #get the mean and standard error for of the rungs
     rung_mean = rung_df.agg(["mean","sem"])
     #remove any column with NaN values
@@ -55,8 +55,9 @@ for f in folders:
     rung_x = np.empty(shape=(int(rung_shell.shape[1]),1))
     rung_y = np.empty(shape=(int(rung_shell.shape[1]),1))
     #split the dataframe columns into the numpy arrays so we have all the x together and all the y together
-    for rung in rung_mean.columns:
-        key = rung[0]
+    #the list of column names is not in order, but it shouldn't matter as long as the x and y line up in position
+    for rung in rung_shell.columns.get_level_values(0):
+        key = rung
         num = rung_shell.columns.get_loc(key)
         rung_x[num]=rung_mean[key]["x"]["mean"]
         rung_y[num]=rung_mean[key]["y"]["mean"]
@@ -196,6 +197,7 @@ all_score = score_df.merge(test_human,on=["subject","date","run","limb"])
 all_score = all_score.dropna(axis=0)
 
 all_score.to_csv("/home/ml/Documents/comparison_scores_6_mc_rats_clustering.csv")
+print("Score calculation and comparison done.... Starting on graphs")
 
 calcs=[]
 #interate through every row in the dataframe.
