@@ -339,35 +339,31 @@ for limb in calc_limbs:
     name = limb["limb"][0]
 
     #Difference in steps
-    #alpha=0.5 is a vestige of older code when i was plotting multiple histograms on one axis but I like the light blue color so I've kept it
     plt.close()
-    plt.hist(limb["step_diff"],label='Multipoint Difference',alpha=0.5)
+    plt.hist(limb["step_diff"],label='Multipoint Difference')
     plt.legend()
     plt.title("Difference in number of steps "+name)
     plt.xlabel("Computation - Human")
     plt.ylabel("Number of Runs")
-    plt.show()
     plt.savefig("/home/ml/Documents/methods_figures/histograms/steps_"+name+'.png')
 
     #difference in misses
     plt.close()
-    plt.hist(limb["miss_diff"],label='Multipoint Difference',alpha=0.5)
+    plt.hist(limb["miss_diff"],label='Multipoint Difference')
     plt.legend()
     plt.title("Difference in number of misses "+name)
     plt.xlabel("Computation - Human")
     plt.ylabel("Number of Runs")
-    plt.show()
     plt.savefig("/home/ml/Documents/methods_figures/histograms/misses_"+name+'.png')
 
 
     #difference in hits
     plt.close()
-    plt.hist(limb["hit_diff"],label='Multipoint Difference',alpha=0.5)
+    plt.hist(limb["hit_diff"],label='Multipoint Difference')
     plt.legend()
     plt.title("Difference in number of hits "+name)
     plt.xlabel("Computation - Human")
     plt.ylabel("Number of Runs")
-    plt.show()
     plt.savefig("/home/ml/Documents/methods_figures/histograms/hits_"+name+'.png')
 
 
@@ -413,7 +409,7 @@ for limb in limbs:
     plt.savefig("/home/ml/Documents/methods_figures/average_comp/perc_slip_"+name+'.png')
 
 
-    plt.show()
+    plt.close()
     plt.figure()
     plt.rc('xtick')
     plt.rc('ytick')
@@ -427,8 +423,7 @@ for limb in limbs:
     plt.gca().invert_xaxis()
     plt.savefig("/home/ml/Documents/methods_figures/average_comp/steps_"+name+'.png')
 
-
-    plt.show()
+    plt.close()
     plt.figure()
     plt.rc('xtick')
     plt.rc('ytick')
@@ -440,5 +435,5 @@ for limb in limbs:
     plt.ylim(bottom=0)
     plt.legend()
     plt.gca().invert_xaxis()
-    plt.show()
     plt.savefig("/home/ml/Documents/methods_figures/average_comp/slips_"+name+'.png')
+print("All done")
