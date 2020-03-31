@@ -1,5 +1,5 @@
 # read the file
-rats = ["MC61","MC78","MC87","MC30","MC70","MC45"]
+rats = ["MC61","MC87","MC30","MC70","MC45","MC78"]
 #define handedness of the rats
 right_handed = ["MC45","MC61","MC78","MC87","MC30","MC70"]
 left_handed = []
@@ -65,6 +65,8 @@ for f in folders:
     rung_x = rung_x[not_outliers(rung_y)]
     rung_y = rung_y[not_outliers(rung_y)]
 
+
+
     #left crossings
     if run[0] == "L":
         #apply handedness
@@ -81,6 +83,26 @@ for f in folders:
         #back left
         df_ankle = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"left ankle")
         df_toes = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"left toes")
+
+        #rung curve fit
+        x = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["left fingers"],0.1,fill=False)['x']
+        y = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["left fingers"],0.1,fill=False)['y']
+
+        x2 = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["left toes"],0.1,fill=False)['x']
+        y2 = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["left toes"],0.1,fill=False)['y']
+        plt.close()
+        plt.plot(rung_x,func(rung_x,*np.polyfit(rung_x,rung_y,2)),label='rung curve fit',color='k')
+        plt.scatter(rung_x,rung_y,label='Rungs')
+        plt.scatter(x,y,label="Forelimb location")
+        plt.scatter(x2,y2,label="Hindlimb location")
+        plt.title(subject + " " + date + " "+ run + "Rungs Curve Fit")
+        plt.xlabel("x")
+        plt.ylabel("y")
+        plt.legend()
+        plt.gca().invert_yaxis()
+        plt.savefig("/home/ml/Documents/methods_figures/rungs/"+subject+"_"+date+'_'+run+"_rung_fit.png")
+        plt.close()
+
     #right crossings
     if run[0] == "R":
         #apply handedness
@@ -97,6 +119,26 @@ for f in folders:
         #back right
         df_ankle = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right ankle")
         df_toes = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right toes")
+
+        x = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["right fingers"],0.1,fill=False)['x']
+        y = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["right fingers"],0.1,fill=False)['y']
+
+        x2 = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["right toes"],0.1,fill=False)['x']
+        y2 = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["right toes"],0.1,fill=False)['y']
+        plt.close()
+        plt.plot(rung_x,func(rung_x,*np.polyfit(rung_x,rung_y,2)),label='rung curve fit',color='k')
+        plt.scatter(rung_x,rung_y,label='Rungs')
+        plt.scatter(x,y,label="Forelimb location")
+        plt.scatter(x2,y2,label="Hindlimb location")
+        plt.title(subject + " " + date + " "+ run + " Rungs Curve Fit ")
+        plt.xlabel("x")
+        plt.ylabel("y")
+        plt.legend()
+        plt.gca().invert_yaxis()
+        plt.savefig("/home/ml/Documents/methods_figures/rungs/"+subject+"_"+date+'_'+run+"_rung_fit.png")
+
+
+
     #filter dataframes by likelihood
     #front
     df_wrist = likelihood_filter(df_wrist,likelihood_threshold)
@@ -106,12 +148,32 @@ for f in folders:
     df_ankle = likelihood_filter(df_ankle,likelihood_threshold)
     df_toes = likelihood_filter(df_toes,likelihood_threshold)
 
+
+
     #get the x velocity peaks using clusters
     wrist_forward_list = find_clusters(df_wrist)
     fingers_forward_list = find_clusters(df_fingers)
 
     ankle_forward_list = find_clusters(df_ankle)
     toes_forward_list = find_clusters(df_toes)
+
+    #after curve fit with steps
+    x = df_fingers['x']
+    y = df_fingers['y']
+    x2 = df_toes['x']
+    y2 = df_toes['y']
+    plt.close()
+    plt.plot(x,y,label='Forelimb location',color='tab:orange',marker='o')
+    plt.plot(x2,y2,label='Hindlimb location',color='tab:green',marker='o')
+    plt.plot(x[fingers_forward_list],y[fingers_forward_list],color='gold',markersize=12,marker='o',lw=0,label='Forelimb Steps')
+    plt.plot(x2[toes_forward_list],y2[toes_forward_list],color='limegreen',markersize=12,marker='o',lw=0,label='Hindlimb Steps')
+    plt.title(subject + " " + date + " "+ run + " Position After Correction with Step Clusters")
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.legend()
+    plt.gca().invert_yaxis()
+    plt.savefig("/home/ml/Documents/methods_figures/clusters/"+subject+"_"+date+'_'+run+"_position.png")
+    plt.close()
 
     #join the two points on the front left limb
     front_forward = fingers_forward_list
@@ -285,6 +347,7 @@ for limb in calc_limbs:
     plt.xlabel("Computation - Human")
     plt.ylabel("Number of Runs")
     plt.show()
+    plt.savefig("/home/ml/Documents/methods_figures/histograms/steps_"+name+'.png')
 
     #difference in misses
     plt.close()
@@ -294,6 +357,8 @@ for limb in calc_limbs:
     plt.xlabel("Computation - Human")
     plt.ylabel("Number of Runs")
     plt.show()
+    plt.savefig("/home/ml/Documents/methods_figures/histograms/misses_"+name+'.png')
+
 
     #difference in hits
     plt.close()
@@ -303,6 +368,8 @@ for limb in calc_limbs:
     plt.xlabel("Computation - Human")
     plt.ylabel("Number of Runs")
     plt.show()
+    plt.savefig("/home/ml/Documents/methods_figures/histograms/hits_"+name+'.png')
+
 
 
 #new dataframe that calculates the mean of each in that list below
@@ -336,13 +403,15 @@ for limb in limbs:
     plt.rc('ytick')
     plt.errorbar(limb["week"],limb["comp_score"]["mean"],yerr=limb["comp_score"]["sem"] , uplims=True, lolims=True,label="Computational")
     plt.errorbar(limb["week"],limb["human_score"]["mean"],yerr=limb["human_score"]["sem"] , uplims=True, lolims=True,label="Human")
-    plt.title( name+" Slip Difference")
+    plt.title( name+" Percent Slip Difference")
     plt.xlabel("Week")
     plt.ylabel("%slip")
     plt.ylim(bottom=0)
     plt.legend()
     #invert x because preinjury is later alphabetically than postinjury
     plt.gca().invert_xaxis()
+    plt.savefig("/home/ml/Documents/methods_figures/average_comp/perc_slip_"+name+'.png')
+
 
     plt.show()
     plt.figure()
@@ -350,12 +419,14 @@ for limb in limbs:
     plt.rc('ytick')
     plt.errorbar(limb["week"],limb["comp_steps"]["mean"],yerr=limb["comp_steps"]["sem"] , uplims=True, lolims=True,label="Computational")
     plt.errorbar(limb["week"],limb["human_steps"]["mean"],yerr=limb["human_steps"]["sem"] , uplims=True, lolims=True,label="Human")
-    plt.title( name+" Slip Difference")
+    plt.title( name+" Step Difference")
     plt.xlabel("Week")
     plt.ylabel("Number of Steps")
     plt.ylim(bottom=0)
     plt.legend()
     plt.gca().invert_xaxis()
+    plt.savefig("/home/ml/Documents/methods_figures/average_comp/steps_"+name+'.png')
+
 
     plt.show()
     plt.figure()
@@ -370,3 +441,4 @@ for limb in limbs:
     plt.legend()
     plt.gca().invert_xaxis()
     plt.show()
+    plt.savefig("/home/ml/Documents/methods_figures/average_comp/slips_"+name+'.png')

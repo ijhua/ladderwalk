@@ -124,6 +124,17 @@ def peak_list_union(list1,list2):
     return lst
 
 def remove_close(lst):
+    '''
+    Currently unused
+    ...
+    Parameters
+    ----------
+    lst: list. List of indexes
+
+    Returns
+    -------
+    list that has had elements that are less than 2 apart removed.
+    '''
     new_lst = []
     lst = sorted(lst)
     if len(lst)>1:
@@ -136,9 +147,22 @@ def remove_close(lst):
     return new_lst
 
 def zero_velocity_index(df,coord,top_r,bottom_r):
-    #give the dataframe where the coord velocity is close to 0
+    '''
+    Finds where the velocity in the x or y direction is close to 0. Currently not used
+    ....
+    Parameters
+    ----------
+    df: dataframe
+    coord: str. "x" or "y"
+    top_r: positive number. maximum allowed positive velocity
+    bottom_r: positive number. maximum allowed negative velocity
+
+    Returns
+    -------
+    Array of dataframe index values
+    '''
     a = np.gradient(df[coord])
-    return df.loc[np.where(np.logical_and(a<top_r,a>-bottom_r))].indexss
+    return df.loc[np.where(np.logical_and(a<top_r,a>-bottom_r))].index
 
 def zero_velocity_y_position():
     all_range = 0.4
@@ -163,7 +187,9 @@ def find_y_position_peaks(df,thresh,dist):
 
 
 def find_clusters(df):
-    db = DBSCAN(eps = 25, min_samples = 3).fit(df)
+    avg = df['y'].mean()-5
+    df = df.loc[df['y']>avg]
+    db = DBSCAN(eps = 20, min_samples = 3).fit(df)
     core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
     core_samples_mask[db.core_sample_indices_] = True
     labels = db.labels_
