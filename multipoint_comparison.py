@@ -22,7 +22,10 @@ for f in folders:
     run = name.split("_")[2]
     subject = name.split("_")[0]
     date = name.split("_")[1]
-    crossing=name.split("_")[3][-1]
+    if len(name.split("_")[3])==8:
+        crossing=name.split("_")[3][-1]
+    elif len(name.split("_")[3])>8:
+        crossing = name.split("_")[3][-2:]
     #parameters for later
     likelihood_threshold = 0.1
     xheight = 20
