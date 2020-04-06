@@ -12,6 +12,7 @@ for rat in rats:
 data = []
 #iterate through every file
 for f in folders:
+    clear_output(wait=True)
     print(str(count)+"/"+str(len(folders)))
     #read the file
     df = pd.read_hdf(f)
@@ -63,7 +64,45 @@ for f in folders:
     rung_x = rung_x[not_outliers(rung_y)]
     rung_y = rung_y[not_outliers(rung_y)]
 
-    print("getting dfs")
+    #estimate distance
+    r1 = rung_shell.iloc[0,4:11][0]
+    r2 = rung_shell.iloc[0,4:11][1]
+    r3 = rung_shell.iloc[0,4:11][2]
+    r4 = rung_shell.iloc[0,4:11][3]
+    r5 = rung_shell.iloc[0,4:11][4]
+
+    r6 = rung_shell.iloc[0,21:26][0]
+    r7 = rung_shell.iloc[0,21:26][1]
+    r8 = rung_shell.iloc[0,21:26][2]
+    r9 = rung_shell.iloc[0,21:26][3]
+    r10 = rung_shell.iloc[0,21:26][4]
+
+    r11 = rung_shell.iloc[0,30:35][0]
+    r12 = rung_shell.iloc[0,30:35][1]
+    r13 = rung_shell.iloc[0,30:35][2]
+    r14 = rung_shell.iloc[0,30:35][3]
+    r15 = rung_shell.iloc[0,30:35][4]
+
+    d1 = (r2-r1)
+    d2 = (r3-r2)
+    d3 = (r4-r3)
+    d4 = (r5-r4)
+
+    d5 = (r7-r6)
+    d6 = (r8-r7)
+    d7 = (r9-r8)
+    d8 = (r10-r9)
+
+    d9 = (r12-r11)
+    d10 = (r13-r12)
+    d11 = (r14-r13)
+    d12 = (r15-r14)
+
+    rung_dists = np.array([d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,d11,d12])
+    rung_dists = rung_dists[not_outliers(rung_dists)[0]]
+    rung_median = median(rung_dists)
+
+
     #left crossings
     if run[0] == "L":
         #apply handedness
@@ -171,8 +210,10 @@ for f in folders:
             for col in new_df.columns.levels[0]:
                 df3 = new_df[col]
                 df3 = df3.reset_index(drop=True).dropna()
-                dx = abs(df3['x'][0] - df3['x'][len(df3)-1])
-                dy = abs(df3['y'][0] - df3['y'][len(df3)-1])
+                #distance between 2 adjacent rungs = 0.7cm
+                #conversion: 1 pixel = 0.7/median
+                dx = abs(df3['x'][0] - df3['x'][len(df3)-1])*(0.7/rung_median)
+                dy = abs(df3['y'][0] - df3['y'][len(df3)-1])*(0.7/rung_median)
                 dt = len(df3)*(1/framerate)
                 v_x = dx/dt
                 v_y = dy/dt
@@ -205,12 +246,10 @@ for f in folders:
                 std_v_y = np.nan
             data.append([subject,date,run,limb,framerate,num_windows,avg_t,std_t,avg_d_x,std_d_x,avg_d_y,std_d_y,avg_d,avg_v_x,std_v_x,avg_v_y,std_v_y,avg_v])
     count+=1
-data_df = pd.DataFrame(data,columns = ["subject","date","run","limb","framerate",'number of windows',"avg t (s)", "std t","avg dx (px)","std dx","avg dy (px)","std dy","avg d (px)",'avg vx (px/s)','std vx','avg vy (px/s)',"std vy","avg v (px/s)"])
+data_df = pd.DataFrame(data,columns = ["subject","date","run","limb","framerate",'number of windows',"avg t (s)", "std t","avg dx (cm)","std dx","avg dy (cm)","std dy","avg d (cm)",'avg vx (cm/s)','std vx','avg vy (cm/s)',"std vy","avg v (cm/s)"])
 data_df["date"] = pd.to_datetime(data_df["date"])
 data_df.to_csv("/home/ml/Documents/step_stats.csv")
 
-
-print("Calculating dates")
 calcs = []
 for index,row in data_df.iterrows():
     #get the subject ID
@@ -238,18 +277,66 @@ for index,row in data_df.iterrows():
     limb = row['limb']
 
     avg_t = row["avg t (s)"]
-    avg_d_x = row["avg dx (px)"]
-    avg_d = row["avg d (px)"]
-    avg_v = row["avg v (px/s)"]
-    avg_v_x = row["avg vx (px/s)"]
+    avg_d_x = row["avg dx (cm)"]
+    avg_d = row["avg d (cm)"]
+    avg_v = row["avg v (cm/s)"]
+    avg_v_x = row["avg vx (cm/s)"]
 
     calcs.append([subject,week,limb,avg_t,avg_d_x,avg_d,avg_v,avg_v_x])
 
-print("Calculating Weekly Averages")
-calc_df = pd.DataFrame(calcs,columns=["subject","week","limb","avg t (s)","avg dx (px)","avg d (px)","avg v (px/s)","avg vx (px/s)"])
+calc_df = pd.DataFrame(calcs,columns=["subject","week","limb","avg t (s)","avg dx (cm)","avg d (cm)","avg v (cm/s)","avg vx (cm/s)"])
+
+#t tests
+comb_df = calc_df
+comb_df = comb_df.reset_index(drop=True)
+
+comb_fd = comb_df.loc[comb_df["limb"]=="Dominant Front"]
+comb_bd = comb_df.loc[comb_df["limb"]=="Dominant Back"]
+comb_fn = comb_df.loc[comb_df["limb"]=="Nondominant Front"]
+comb_bn = comb_df.loc[comb_df["limb"]=="Nondominant Back"]
+
+ts_list = []
+
+t_fd = stats.ttest_ind(comb_fd.loc[comb_fd["week"]=="Preinjury"].iloc[:,3],comb_fd.loc[comb_fd["week"]=="Postinjury"].iloc[:,3])[1]
+dx_fd = stats.ttest_ind(comb_fd.loc[comb_fd["week"]=="Preinjury"].iloc[:,4],comb_fd.loc[comb_fd["week"]=="Postinjury"].iloc[:,4])[1]
+d_fd = stats.ttest_ind(comb_fd.loc[comb_fd["week"]=="Preinjury"].iloc[:,5],comb_fd.loc[comb_fd["week"]=="Postinjury"].iloc[:,5])[1]
+v_fd = stats.ttest_ind(comb_fd.loc[comb_fd["week"]=="Preinjury"].iloc[:,6],comb_fd.loc[comb_fd["week"]=="Postinjury"].iloc[:,6])[1]
+vx_fd = stats.ttest_ind(comb_fd.loc[comb_fd["week"]=="Preinjury"].iloc[:,7],comb_fd.loc[comb_fd["week"]=="Postinjury"].iloc[:,7])[1]
+
+ts_list.append(["Dominant Front", t_fd,dx_fd,d_fd,v_fd,vx_fd])
+
+t_bd = stats.ttest_ind(comb_bd.loc[comb_bd["week"]=="Preinjury"].iloc[:,3],comb_bd.loc[comb_bd["week"]=="Postinjury"].iloc[:,3])[1]
+dx_bd = stats.ttest_ind(comb_bd.loc[comb_bd["week"]=="Preinjury"].iloc[:,4],comb_bd.loc[comb_bd["week"]=="Postinjury"].iloc[:,4])[1]
+d_bd = stats.ttest_ind(comb_bd.loc[comb_bd["week"]=="Preinjury"].iloc[:,5],comb_bd.loc[comb_bd["week"]=="Postinjury"].iloc[:,5])[1]
+v_bd = stats.ttest_ind(comb_bd.loc[comb_bd["week"]=="Preinjury"].iloc[:,6],comb_bd.loc[comb_bd["week"]=="Postinjury"].iloc[:,6])[1]
+vx_bd = stats.ttest_ind(comb_bd.loc[comb_bd["week"]=="Preinjury"].iloc[:,7],comb_bd.loc[comb_bd["week"]=="Postinjury"].iloc[:,7])[1]
+
+ts_list.append(["Dominant Back", t_bd,dx_bd,d_bd,v_bd,vx_bd])
+
+
+t_fn = stats.ttest_ind(comb_fn.loc[comb_fn["week"]=="Preinjury"].iloc[:,3],comb_fn.loc[comb_fn["week"]=="Postinjury"].iloc[:,3])[1]
+dx_fn = stats.ttest_ind(comb_fn.loc[comb_fn["week"]=="Preinjury"].iloc[:,4],comb_fn.loc[comb_fn["week"]=="Postinjury"].iloc[:,4])[1]
+d_fn = stats.ttest_ind(comb_fn.loc[comb_fn["week"]=="Preinjury"].iloc[:,5],comb_fn.loc[comb_fn["week"]=="Postinjury"].iloc[:,5])[1]
+v_fn = stats.ttest_ind(comb_fn.loc[comb_fn["week"]=="Preinjury"].iloc[:,6],comb_fn.loc[comb_fn["week"]=="Postinjury"].iloc[:,6])[1]
+vx_fn = stats.ttest_ind(comb_fn.loc[comb_fn["week"]=="Preinjury"].iloc[:,7],comb_fn.loc[comb_fn["week"]=="Postinjury"].iloc[:,7])[1]
+
+ts_list.append(["Nondominant Front", t_fn,dx_fn,d_fn,v_fn,vx_fn])
+
+
+t_bn = stats.ttest_ind(comb_bn.loc[comb_bn["week"]=="Preinjury"].iloc[:,3],comb_bn.loc[comb_bn["week"]=="Postinjury"].iloc[:,3])[1]
+dx_bn = stats.ttest_ind(comb_bn.loc[comb_bn["week"]=="Preinjury"].iloc[:,4],comb_bn.loc[comb_bn["week"]=="Postinjury"].iloc[:,4])[1]
+d_bn = stats.ttest_ind(comb_bn.loc[comb_bn["week"]=="Preinjury"].iloc[:,5],comb_bn.loc[comb_bn["week"]=="Postinjury"].iloc[:,5])[1]
+v_bn = stats.ttest_ind(comb_bn.loc[comb_bn["week"]=="Preinjury"].iloc[:,6],comb_bn.loc[comb_bn["week"]=="Postinjury"].iloc[:,6])[1]
+vx_bn = stats.ttest_ind(comb_bn.loc[comb_bn["week"]=="Preinjury"].iloc[:,7],comb_bn.loc[comb_bn["week"]=="Postinjury"].iloc[:,7])[1]
+
+ts_list.append(["Nondominant Back", t_bn,dx_bn,d_bn,v_bn,vx_bn])
+
+t_df = pd.DataFrame(ts_list, columns=["limb","t_t","t_dx","t_d","t_v","t_vx"])
+
 #trends
-trends = calc_df.groupby(["week","limb"])["avg t (s)","avg dx (px)","avg d (px)","avg v (px/s)","avg vx (px/s)"].agg(["mean","sem"])
-trends = trends.reset_index()
+trend = calc_df.groupby(["week","limb"])["avg t (s)","avg dx (cm)","avg d (cm)","avg v (cm/s)","avg vx (cm/s)"].agg(["mean","sem"])
+trend = trend.reset_index()
+trends = trend.merge(t_df,on=['limb'])
 trends.to_csv("/home/ml/Documents/trends.csv")
 
 fd = trends.loc[trends["limb"]=="Dominant Front"]
@@ -257,14 +344,18 @@ bd = trends.loc[trends["limb"]=="Dominant Back"]
 fn = trends.loc[trends["limb"]=="Nondominant Front"]
 bn = trends.loc[trends["limb"]=="Nondominant Back"]
 
-print("making graphs")
 limbs = [fd,bd,fn,bn]
 for limb in limbs:
     limb = limb.reset_index()
     name = limb["limb"][0]
 
     plt.close()
-    plt.errorbar(limb["week"],limb["avg t (s)"]["mean"],yerr=limb["avg t (s)"]["sem"],uplims=True, lolims=True)
+    if limb['t_t'][0]<0.05:
+        plt.scatter("Postinjury",limb[('avg t (s)', 'mean')].max(),marker="$*$")
+    elif limb['t_t'][0]<0.001:
+        plt.scatter("Postinjury",limb[('avg t (s)', 'mean')].max(),marker="$**$")
+    plt.annotate(str(limb['t_t'][0]),("Postinjury",limb[('avg t (s)', 'mean')].max()))
+    plt.errorbar(limb[('week', '')],limb[('avg t (s)', 'mean')],yerr=limb[('avg t (s)', 'sem')],uplims=True, lolims=True)
     plt.xlabel("Week")
     plt.ylabel("Time (sec)")
     plt.title(name + " Avg Time Per Step")
@@ -272,35 +363,56 @@ for limb in limbs:
     plt.savefig("/home/ml/Documents/methods_figures/loc_trends/"+name+"_avg_time.png")
 
     plt.close()
-    plt.errorbar(limb["week"],limb["avg d (px)"]["mean"],yerr=limb["avg d (px)"]["sem"],uplims=True, lolims=True)
+    if limb['t_d'][0]<0.05:
+        plt.scatter("Postinjury",limb[('avg d (cm)', 'mean')].max(),marker="$*$")
+    elif limb['t_d'][0]<0.001:
+        plt.scatter("Postinjury",limb[('avg d (cm)', 'mean')].max(),marker="$**$")
+    plt.annotate(str(limb['t_d'][0]),("Postinjury",limb[('avg d (cm)', 'mean')].max()))
+    plt.errorbar(limb[('week', '')],limb['avg d (cm)', 'mean'],yerr=limb[('avg d (cm)', 'sem')],uplims=True, lolims=True)
     plt.xlabel("Week")
-    plt.ylabel("Distance (pixels)")
+    plt.ylabel("Distance (cm)")
     plt.title(name + " Avg Step Distance")
     plt.gca().invert_xaxis()
     plt.savefig("/home/ml/Documents/methods_figures/loc_trends/"+name+"_avg_distance.png")
 
     plt.close()
-    plt.errorbar(limb["week"],limb["avg dx (px)"]["mean"],yerr=limb["avg dx (px)"]["sem"],uplims=True, lolims=True)
+    if limb['t_dx'][0]<0.05:
+        plt.scatter("Postinjury",limb[('avg dx (cm)', 'mean')].max(),marker="$*$")
+    elif limb['t_dx'][0]<0.001:
+        plt.scatter("Postinjury",limb[('avg dx (cm)', 'mean')].max(),marker="$**$")
+    plt.annotate(str(limb['t_dx'][0]),("Postinjury",limb[('avg dx (cm)', 'mean')].max()))
+    plt.errorbar(limb[('week', '')],limb[('avg dx (cm)', 'mean')],yerr=limb[('avg dx (cm)', 'sem')],uplims=True, lolims=True)
     plt.xlabel("Week")
-    plt.ylabel("Distance (pixels)")
+    plt.ylabel("Distance (cm)")
     plt.title(name + " Avg x Component of Step Distance")
     plt.gca().invert_xaxis()
     plt.savefig("/home/ml/Documents/methods_figures/loc_trends/"+name+"_avg_x_distance.png")
 
     plt.close()
-    plt.errorbar(limb["week"],limb["avg v (px/s)"]["mean"],yerr=limb["avg v (px/s)"]["sem"],uplims=True, lolims=True)
+    if limb['t_v'][0]<0.05:
+        plt.scatter("Postinjury",limb[('avg v (cm/s)', 'mean')].max(),marker="$*$")
+    elif limb['t_v'][0]<0.001:
+        plt.scatter("Postinjury",limb[('avg v (cm/s)', 'mean')].max(),marker="$**$")
+    plt.annotate(str(limb['t_v'][0]),("Postinjury",limb[('avg v (cm/s)', 'mean')].max()))
+    plt.errorbar(limb[('week', '')],limb[('avg v (cm/s)', 'mean')],yerr=limb[('avg v (cm/s)', 'sem')],uplims=True, lolims=True)
     plt.xlabel("Week")
-    plt.ylabel("Velocity (pixels/sec)")
+    plt.ylabel("Velocity (cm/sec)")
     plt.title(name + " Avg Step Velocity")
     plt.gca().invert_xaxis()
     plt.savefig("/home/ml/Documents/methods_figures/loc_trends/"+name+"_avg_velocity.png")
 
     plt.close()
-    plt.errorbar(limb["week"],limb["avg vx (px/s)"]["mean"],yerr=limb["avg vx (px/s)"]["sem"],uplims=True, lolims=True)
+    if limb['t_vx'][0]<0.05:
+        plt.scatter("Postinjury",limb[('avg vx (cm/s)', 'mean')].max(),marker="$*$")
+    elif limb['t_vx'][0]<0.001:
+        plt.scatter("Postinjury",limb[('avg vx (cm/s)', 'mean')].maxs(),marker="$**$")
+    plt.annotate(str(limb['t_vx'][0]),("Postinjury",limb[('avg vx (cm/s)', 'mean')].max()))
+    plt.errorbar(limb[('week', '')],limb[('avg vx (cm/s)', 'mean')],yerr=limb[('avg vx (cm/s)', 'sem')],uplims=True, lolims=True)
     plt.xlabel("Week")
-    plt.ylabel("Velocity (pixels/sec)")
+    plt.ylabel("Velocity (cms/sec)")
     plt.title(name + " Avg x Component of Step Velocity")
     plt.gca().invert_xaxis()
     plt.savefig("/home/ml/Documents/methods_figures/loc_trends/"+name+"_avg_x_velocity.png")
 
     plt.close()
+print("Done")
