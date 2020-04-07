@@ -10,6 +10,7 @@ folders = []
 for rat in rats:
     folders+=glob.glob("/home/ml/Documents/Not_TADSS_Videos/"+rat+"/cut/dlc_output_16-810/*.h5")
 data = []
+ind = []
 #iterate through every file
 for f in folders:
     clear_output(wait=True)
@@ -27,6 +28,24 @@ for f in folders:
         crossing = name.split("_")[3][-2:]
     #parameters for later
     likelihood_threshold = 0.1
+
+    if subject == "MC30":
+        date1 = datetime.datetime(2019,11,12)
+    elif subject == "MC70":
+        date1 = datetime.datetime(2019,3,19)
+    elif subject == "MC45":
+        date1 = datetime.datetime(2019,7,23)
+    elif subject == "MC61":
+        date1 = datetime.datetime(2019,6,11)
+    elif subject == "MC78":
+        date1 = datetime.datetime(2019,4,2)
+    elif subject == "MC87":
+        date1 = datetime.datetime(2018,12,17)
+    week_num = (pd.to_datetime(date).date() - date1.date()).days/7
+    if week_num <=0:
+        week = "Preinjury"
+    if week_num>0:
+        week="Postinjury"
 
 
     video = cv2.VideoCapture(f.split('.')[0]+"_labeled.mp4")
@@ -215,14 +234,17 @@ for f in folders:
                 dx = abs(df3['x'][0] - df3['x'][len(df3)-1])*(0.7/rung_median)
                 dy = abs(df3['y'][0] - df3['y'][len(df3)-1])*(0.7/rung_median)
                 dt = len(df3)*(1/framerate)
-                v_x = dx/dt
-                v_y = dy/dt
-                all_t.append(dt)
+                vx = dx/dt
+                vy = dy/dt
+                '''all_t.append(dt)
                 dist_x.append(dx)
                 dist_y.append(dy)
-                vels_x.append(v_x)
-                vels_y.append(v_y)
-            avg_t = mean(all_t)
+                vels_x.append(vx)
+                vels_y.append(vy)'''
+                d = hypot(dx,dy)
+                v = hypot(vx,vy)
+                ind.append([subject,date,week,run,limb,framerate,col,dt,dx,dy,d,vx,vy,v])
+            '''avg_t = mean(all_t)
 
             avg_d_x = mean(dist_x)
 
@@ -230,9 +252,9 @@ for f in folders:
             avg_d = hypot(avg_d_x,avg_d_y)
             avg_v_x = mean(vels_x)
             avg_v_y = mean(vels_y)
-            avg_v = hypot(avg_v_x,avg_v_y)
+            avg_v = hypot(avg_v_x,avg_v_y)'''
 
-            if len(new_df.columns.levels[0])>1:
+            '''if len(new_df.columns.levels[0])>1:
                 std_t = stdev(all_t)
                 std_d_x = stdev(dist_x)
                 std_d_y = stdev(dist_y)
@@ -243,15 +265,19 @@ for f in folders:
                 std_d_x = np.nan
                 std_d_y = np.nan
                 std_v_x = np.nan
-                std_v_y = np.nan
-            data.append([subject,date,run,limb,framerate,num_windows,avg_t,std_t,avg_d_x,std_d_x,avg_d_y,std_d_y,avg_d,avg_v_x,std_v_x,avg_v_y,std_v_y,avg_v])
+                std_v_y = np.nan'''
+            #data.append([subject,date,run,limb,framerate,num_windows,avg_t,std_t,avg_d_x,std_d_x,avg_d_y,std_d_y,avg_d,avg_v_x,std_v_x,avg_v_y,std_v_y,avg_v])
     count+=1
-data_df = pd.DataFrame(data,columns = ["subject","date","run","limb","framerate",'number of windows',"avg t (s)", "std t","avg dx (cm)","std dx","avg dy (cm)","std dy","avg d (cm)",'avg vx (cm/s)','std vx','avg vy (cm/s)',"std vy","avg v (cm/s)"])
-data_df["date"] = pd.to_datetime(data_df["date"])
-data_df.to_csv("/home/ml/Documents/step_stats.csv")
+#data_df = pd.DataFrame(data,columns = ["subject","date","run","limb","framerate",'number of windows',"avg t (s)", "std t","avg dx (cm)","std dx","avg dy (cm)","std dy","avg d (cm)",'avg vx (cm/s)','std vx','avg vy (cm/s)',"std vy","avg v (cm/s)"])
+#data_df["date"] = pd.to_datetime(data_df["date"])
+#data_df.to_csv("/home/ml/Documents/step_stats.csv")
+
+ind_df = pd.DataFrame(ind,columns=["subject","date","week","run","limb","framerate","step_no","time","dx","dy","distance","vx","vy","velocity"])
+ind_df["date"] = pd.to_datetime(ind_df["date"])
+ind_df.to_csv("/home/ml/Documents/individual_steps.csv")
 
 calcs = []
-for index,row in data_df.iterrows():
+for index,row in ind_df.iterrows():
     #get the subject ID
     subject = row['subject']
     #Set the date of injury for each rat
@@ -276,15 +302,15 @@ for index,row in data_df.iterrows():
     #definethe limb column
     limb = row['limb']
 
-    avg_t = row["avg t (s)"]
-    avg_d_x = row["avg dx (cm)"]
-    avg_d = row["avg d (cm)"]
-    avg_v = row["avg v (cm/s)"]
-    avg_v_x = row["avg vx (cm/s)"]
+    t = row["time"]
+    dx = row["dx"]
+    d = row["distance"]
+    vx = row["vx"]
+    v = row["velocity"]
 
-    calcs.append([subject,week,limb,avg_t,avg_d_x,avg_d,avg_v,avg_v_x])
+    calcs.append([subject,week,limb,t,dx,d,vx,v])
 
-calc_df = pd.DataFrame(calcs,columns=["subject","week","limb","avg t (s)","avg dx (cm)","avg d (cm)","avg v (cm/s)","avg vx (cm/s)"])
+calc_df = pd.DataFrame(calcs,columns=["subject","week","limb","t","dx","d","vx","v"])
 
 #t tests
 comb_df = calc_df
@@ -329,15 +355,15 @@ d_bn = stats.ttest_ind(comb_bn.loc[comb_bn["week"]=="Preinjury"].iloc[:,5],comb_
 v_bn = stats.ttest_ind(comb_bn.loc[comb_bn["week"]=="Preinjury"].iloc[:,6],comb_bn.loc[comb_bn["week"]=="Postinjury"].iloc[:,6])[1]
 vx_bn = stats.ttest_ind(comb_bn.loc[comb_bn["week"]=="Preinjury"].iloc[:,7],comb_bn.loc[comb_bn["week"]=="Postinjury"].iloc[:,7])[1]
 
-ts_list.append(["Nondominant Back", t_bn,dx_bn,d_bn,v_bn,vx_bn])
+ts_list.append(["Nondominant Back", t_bn,dx_bn,d_bn,vx_bn,v_bn])
 
-t_df = pd.DataFrame(ts_list, columns=["limb","t_t","t_dx","t_d","t_v","t_vx"])
+t_df = pd.DataFrame(ts_list, columns=["limb","t_t","t_dx","t_d","t_vx","t_v"])
 
-#trends
-trend = calc_df.groupby(["week","limb"])["avg t (s)","avg dx (cm)","avg d (cm)","avg v (cm/s)","avg vx (cm/s)"].agg(["mean","sem"])
+#trends (calculate mean and sem)
+trend = calc_df.groupby(["week","limb"])["t","dx","d","vx","v"].agg(["mean","sem"])
 trend = trend.reset_index()
 trends = trend.merge(t_df,on=['limb'])
-trends.to_csv("/home/ml/Documents/trends.csv")
+trends.to_csv("/home/ml/Documents/avg_of_all_steps.csv")
 
 fd = trends.loc[trends["limb"]=="Dominant Front"]
 bd = trends.loc[trends["limb"]=="Dominant Back"]
@@ -351,11 +377,11 @@ for limb in limbs:
 
     plt.close()
     if limb['t_t'][0]<0.05:
-        plt.scatter("Postinjury",limb[('avg t (s)', 'mean')].max(),marker="$*$")
+        plt.scatter("Postinjury",limb[('t', 'mean')].max(),marker="$*$")
     elif limb['t_t'][0]<0.001:
-        plt.scatter("Postinjury",limb[('avg t (s)', 'mean')].max(),marker="$**$")
-    plt.annotate(str(limb['t_t'][0]),("Postinjury",limb[('avg t (s)', 'mean')].max()))
-    plt.errorbar(limb[('week', '')],limb[('avg t (s)', 'mean')],yerr=limb[('avg t (s)', 'sem')],uplims=True, lolims=True)
+        plt.scatter("Postinjury",limb[('t', 'mean')].max(),marker="$**$")
+    plt.annotate(str(round(limb['t_t'][0],5)),("Postinjury",limb[('t', 'mean')].max()))
+    plt.errorbar(limb[('week', '')],limb[('t', 'mean')],yerr=limb[('t', 'sem')],uplims=True, lolims=True)
     plt.xlabel("Week")
     plt.ylabel("Time (sec)")
     plt.title(name + " Avg Time Per Step")
@@ -364,11 +390,11 @@ for limb in limbs:
 
     plt.close()
     if limb['t_d'][0]<0.05:
-        plt.scatter("Postinjury",limb[('avg d (cm)', 'mean')].max(),marker="$*$")
+        plt.scatter("Postinjury",limb[('d', 'mean')].max(),marker="$*$")
     elif limb['t_d'][0]<0.001:
-        plt.scatter("Postinjury",limb[('avg d (cm)', 'mean')].max(),marker="$**$")
-    plt.annotate(str(limb['t_d'][0]),("Postinjury",limb[('avg d (cm)', 'mean')].max()))
-    plt.errorbar(limb[('week', '')],limb['avg d (cm)', 'mean'],yerr=limb[('avg d (cm)', 'sem')],uplims=True, lolims=True)
+        plt.scatter("Postinjury",limb[('d', 'mean')].max(),marker="$**$")
+    plt.annotate(str(round(limb['t_d'][0],5)),("Postinjury",limb[('d', 'mean')].max()))
+    plt.errorbar(limb[('week', '')],limb['d', 'mean'],yerr=limb[('d', 'sem')],uplims=True, lolims=True)
     plt.xlabel("Week")
     plt.ylabel("Distance (cm)")
     plt.title(name + " Avg Step Distance")
@@ -377,11 +403,11 @@ for limb in limbs:
 
     plt.close()
     if limb['t_dx'][0]<0.05:
-        plt.scatter("Postinjury",limb[('avg dx (cm)', 'mean')].max(),marker="$*$")
+        plt.scatter("Postinjury",limb[('dx', 'mean')].max(),marker="$*$")
     elif limb['t_dx'][0]<0.001:
-        plt.scatter("Postinjury",limb[('avg dx (cm)', 'mean')].max(),marker="$**$")
-    plt.annotate(str(limb['t_dx'][0]),("Postinjury",limb[('avg dx (cm)', 'mean')].max()))
-    plt.errorbar(limb[('week', '')],limb[('avg dx (cm)', 'mean')],yerr=limb[('avg dx (cm)', 'sem')],uplims=True, lolims=True)
+        plt.scatter("Postinjury",limb[('dx', 'mean')].max(),marker="$**$")
+    plt.annotate(str(round(limb['t_dx'][0],5)),("Postinjury",limb[('dx', 'mean')].max()))
+    plt.errorbar(limb[('week', '')],limb[('dx', 'mean')],yerr=limb[('dx', 'sem')],uplims=True, lolims=True)
     plt.xlabel("Week")
     plt.ylabel("Distance (cm)")
     plt.title(name + " Avg x Component of Step Distance")
@@ -390,11 +416,11 @@ for limb in limbs:
 
     plt.close()
     if limb['t_v'][0]<0.05:
-        plt.scatter("Postinjury",limb[('avg v (cm/s)', 'mean')].max(),marker="$*$")
+        plt.scatter("Postinjury",limb[('v', 'mean')].max(),marker="$*$")
     elif limb['t_v'][0]<0.001:
-        plt.scatter("Postinjury",limb[('avg v (cm/s)', 'mean')].max(),marker="$**$")
-    plt.annotate(str(limb['t_v'][0]),("Postinjury",limb[('avg v (cm/s)', 'mean')].max()))
-    plt.errorbar(limb[('week', '')],limb[('avg v (cm/s)', 'mean')],yerr=limb[('avg v (cm/s)', 'sem')],uplims=True, lolims=True)
+        plt.scatter("Postinjury",limb[('v', 'mean')].max(),marker="$**$")
+    plt.annotate(str(round(limb['t_v'][0],5)),("Postinjury",limb[('v', 'mean')].max()))
+    plt.errorbar(limb[('week', '')],limb[('v', 'mean')],yerr=limb[('v', 'sem')],uplims=True, lolims=True)
     plt.xlabel("Week")
     plt.ylabel("Velocity (cm/sec)")
     plt.title(name + " Avg Step Velocity")
@@ -403,11 +429,11 @@ for limb in limbs:
 
     plt.close()
     if limb['t_vx'][0]<0.05:
-        plt.scatter("Postinjury",limb[('avg vx (cm/s)', 'mean')].max(),marker="$*$")
+        plt.scatter("Postinjury",limb[('vx', 'mean')].max(),marker="$*$")
     elif limb['t_vx'][0]<0.001:
-        plt.scatter("Postinjury",limb[('avg vx (cm/s)', 'mean')].maxs(),marker="$**$")
-    plt.annotate(str(limb['t_vx'][0]),("Postinjury",limb[('avg vx (cm/s)', 'mean')].max()))
-    plt.errorbar(limb[('week', '')],limb[('avg vx (cm/s)', 'mean')],yerr=limb[('avg vx (cm/s)', 'sem')],uplims=True, lolims=True)
+        plt.scatter("Postinjury",limb[('vx', 'mean')].maxs(),marker="$**$")
+    plt.annotate(str(round(limb['t_vx'][0],5)),("Postinjury",limb[('vx', 'mean')].max()))
+    plt.errorbar(limb[('week', '')],limb[('vx', 'mean')],yerr=limb[('vx', 'sem')],uplims=True, lolims=True)
     plt.xlabel("Week")
     plt.ylabel("Velocity (cms/sec)")
     plt.title(name + " Avg x Component of Step Velocity")
