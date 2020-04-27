@@ -165,6 +165,13 @@ def zero_velocity_index(df,coord,top_r,bottom_r):
     return df.loc[np.where(np.logical_and(a<top_r,a>-bottom_r))].index
 
 def zero_velocity_y_position():
+    '''
+    Finds the y coordinate where velocity is close to 0. Used as a position threshold for peak-finding (for slips)
+
+    Returns
+    -------
+    y value for the front limb and y value for the hind limb
+    '''
     all_range = 0.4
 
     v_x_zero_fingers = zero_velocity_index(df_fingers,'x',all_range,all_range)
@@ -182,13 +189,40 @@ def zero_velocity_y_position():
     return y_pos_front, y_pos_back
 
 def find_y_position_peaks(df,thresh,dist):
+    '''
+    Finds the peak of the y coordinate.
+
+    Parameters
+    ----------
+    df : dataframe
+    thresh: number. height as defined in the scipy.signal.find_peaks documentaion
+    dist: number. distance as defined in the find_peaks documentation
+
+    Returns
+    -------
+    ndarray. indices of peaks in the y that satisfy the conditions.
+    '''
     peaks = find_peaks(df['y'],height = thresh,distance=dist,prominence=1)
     return peaks[0]
 
 
 def find_clusters(df):
+    '''
+    Finds clusters of points that meet certain conditions
+
+    Parameters
+    ----------
+    df: dataframe
+
+    Returns
+    -------
+    List of indices of the center of the cluster
+    '''
+    #average y value
     avg = df['y'].mean()-5
+    #remove values that are less (physically above) the "average." This is to prevent the clustering algorithm from counting clusters of points when the rat rears
     df = df.loc[df['y']>avg]
+    #do the DBSCAN (Density based spatial clustering of applications with noise). fit to the x and y coordinates
     db = DBSCAN(eps = 22, min_samples = 3).fit(df)
     core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
     core_samples_mask[db.core_sample_indices_] = True
@@ -197,6 +231,7 @@ def find_clusters(df):
     n_noise_ = list(labels).count(-1)
     unique_labels = set(labels)
     cluster_center = []
+    #get only the center of the cluster
     for k in unique_labels:
         class_member_mask = (labels == k)
         if len(df[class_member_mask & core_samples_mask].index)>1:
@@ -207,6 +242,17 @@ def find_clusters(df):
     return cluster_center
 
 def clusters_y(df):
+    '''
+    Find the y values of the center of clusters. Intended to be used to separate steps from slips
+
+    Parameters
+    ----------
+    df: dataframe
+
+    Returns
+    -------
+    List of y values of the center of cluster "below" 0 (which is the theoretical y value of the rungs)
+    '''
     avg = df['y'].mean()-5
     df = df.loc[df['y']>avg]
     db = DBSCAN(eps = 20, min_samples = 3).fit(df)
