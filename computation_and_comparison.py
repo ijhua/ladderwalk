@@ -8,7 +8,8 @@ import cv2
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 from scipy import stats
-import postprocess as pp
+
+os.system('python3 postprocess.py')
 
 
 # list of rats
@@ -61,7 +62,7 @@ for f in folders:
         rung_list.append("rung_"+str(i))
     #filter each column of the rung dataframe based on likelihood
     for rung in rung_list:
-        rung_df[rung]=pp.likelihood_filter(rung_df[rung],0.8, fill=False)
+        rung_df[rung]=likelihood_filter(rung_df[rung],0.8, fill=False)
     #get the mean and standard error for of the rungs
     rung_mean = rung_df.agg(["mean","sem"])
     #remove any column with NaN values
@@ -94,18 +95,18 @@ for f in folders:
             limb_back = "Dominant Back"
         #split all the limbs
         #front left
-        df_wrist = pp.extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left wrist")
-        df_fingers = pp.extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left fingers")
+        df_wrist = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left wrist")
+        df_fingers = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left fingers")
         #back left
-        df_ankle = pp.extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left ankle")
-        df_toes = pp.extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left toes")
+        df_ankle = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left ankle")
+        df_toes = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left toes")
 
         #rung curve fit
-        x = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left fingers"],0.1,fill=False)['x']
-        y = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left fingers"],0.1,fill=False)['y']
+        x = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left fingers"],0.1,fill=False)['x']
+        y = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left fingers"],0.1,fill=False)['y']
 
-        x2 = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left toes"],0.1,fill=False)['x']
-        y2 = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left toes"],0.1,fill=False)['y']
+        x2 = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left toes"],0.1,fill=False)['x']
+        y2 = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left toes"],0.1,fill=False)['y']
         #plot the graph of the rung positions with the curve fit line
         plt.close()
         plt.plot(rung_x,func(rung_x,*np.polyfit(rung_x,rung_y,2)),label='rung curve fit',color='k')
@@ -137,11 +138,11 @@ for f in folders:
         df_ankle = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"right ankle")
         df_toes = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"right toes")
 
-        x = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right fingers"],0.1,fill=False)['x']
-        y = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right fingers"],0.1,fill=False)['y']
+        x = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right fingers"],0.1,fill=False)['x']
+        y = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right fingers"],0.1,fill=False)['y']
 
-        x2 = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right toes"],0.1,fill=False)['x']
-        y2 = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right toes"],0.1,fill=False)['y']
+        x2 = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right toes"],0.1,fill=False)['x']
+        y2 = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right toes"],0.1,fill=False)['y']
         #plot the graph of the rung positions with the curve fit line
         plt.close()
         plt.plot(rung_x,func(rung_x,*np.polyfit(rung_x,rung_y,2)),label='rung curve fit',color='k')
@@ -159,21 +160,21 @@ for f in folders:
 
     #filter dataframes by likelihood
     #front
-    df_wrist = pp.likelihood_filter(df_wrist,likelihood_threshold)
-    df_fingers = pp.likelihood_filter(df_fingers,likelihood_threshold)
+    df_wrist = likelihood_filter(df_wrist,likelihood_threshold)
+    df_fingers = likelihood_filter(df_fingers,likelihood_threshold)
 
     #back
-    df_ankle = pp.likelihood_filter(df_ankle,likelihood_threshold)
-    df_toes = pp.likelihood_filter(df_toes,likelihood_threshold)
+    df_ankle = likelihood_filter(df_ankle,likelihood_threshold)
+    df_toes = likelihood_filter(df_toes,likelihood_threshold)
 
 
 
     #get the x velocity peaks using clusters
-    wrist_forward_list = pp.find_clusters(df_wrist)
-    fingers_forward_list = pp.find_clusters(df_fingers)
+    wrist_forward_list = find_clusters(df_wrist)
+    fingers_forward_list = find_clusters(df_fingers)
 
-    ankle_forward_list = pp.find_clusters(df_ankle)
-    toes_forward_list = pp.find_clusters(df_toes)
+    ankle_forward_list = find_clusters(df_ankle)
+    toes_forward_list = find_clusters(df_toes)
 
     #plot the graph after curve fit with steps
     x = df_fingers['x']
@@ -198,13 +199,13 @@ for f in folders:
     back_forward = toes_forward_list
 
     #figure out the y position threshold for peakfinding
-    y_pos_threshold_front,y_pos_threshold_back = pp.zero_velocity_y_position()
+    y_pos_threshold_front,y_pos_threshold_back = zero_velocity_y_position()
 
-    fingers_slip_list = pp.find_y_position_peaks(df_fingers,y_pos_threshold_front,ydist)
-    wrist_slip_list = pp.find_y_position_peaks(df_wrist,y_pos_threshold_front,ydist)
+    fingers_slip_list = find_y_position_peaks(df_fingers,y_pos_threshold_front,ydist)
+    wrist_slip_list = find_y_position_peaks(df_wrist,y_pos_threshold_front,ydist)
 
-    ankle_slip_list = pp.find_y_position_peaks(df_ankle,y_pos_threshold_back,ydist)
-    toes_slip_list = pp.find_y_position_peaks(df_toes,y_pos_threshold_back,ydist)
+    ankle_slip_list = find_y_position_peaks(df_ankle,y_pos_threshold_back,ydist)
+    toes_slip_list = find_y_position_peaks(df_toes,y_pos_threshold_back,ydist)
 
 
     #using only 1 point on each limb appears to be more accurate than using the union of two points
