@@ -1,4 +1,17 @@
-# read the file
+import pandas as pd
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+import glob, os
+import datetime as dt
+import cv2
+from scipy.signal import find_peaks
+from scipy.optimize import curve_fit
+from scipy import stats
+import postprocess as pp
+
+
+# list of rats
 rats = ["MC61","MC87","MC30","MC70","MC45","MC78"]
 #define handedness of the rats
 right_handed = ["MC45","MC61","MC78","MC87","MC30","MC70"]
@@ -48,7 +61,7 @@ for f in folders:
         rung_list.append("rung_"+str(i))
     #filter each column of the rung dataframe based on likelihood
     for rung in rung_list:
-        rung_df[rung]=likelihood_filter(rung_df[rung],0.8, fill=False)
+        rung_df[rung]=pp.likelihood_filter(rung_df[rung],0.8, fill=False)
     #get the mean and standard error for of the rungs
     rung_mean = rung_df.agg(["mean","sem"])
     #remove any column with NaN values
@@ -81,18 +94,19 @@ for f in folders:
             limb_back = "Dominant Back"
         #split all the limbs
         #front left
-        df_wrist = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left wrist")
-        df_fingers = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left fingers")
+        df_wrist = pp.extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left wrist")
+        df_fingers = pp.extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left fingers")
         #back left
-        df_ankle = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left ankle")
-        df_toes = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left toes")
+        df_ankle = pp.extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left ankle")
+        df_toes = pp.extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left toes")
 
         #rung curve fit
-        x = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left fingers"],0.1,fill=False)['x']
-        y = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left fingers"],0.1,fill=False)['y']
+        x = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left fingers"],0.1,fill=False)['x']
+        y = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left fingers"],0.1,fill=False)['y']
 
-        x2 = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left toes"],0.1,fill=False)['x']
-        y2 = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left toes"],0.1,fill=False)['y']
+        x2 = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left toes"],0.1,fill=False)['x']
+        y2 = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left toes"],0.1,fill=False)['y']
+        #plot the graph of the rung positions with the curve fit line
         plt.close()
         plt.plot(rung_x,func(rung_x,*np.polyfit(rung_x,rung_y,2)),label='rung curve fit',color='k')
         plt.scatter(rung_x,rung_y,label='Rungs')
@@ -123,11 +137,12 @@ for f in folders:
         df_ankle = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"right ankle")
         df_toes = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"right toes")
 
-        x = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right fingers"],0.1,fill=False)['x']
-        y = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right fingers"],0.1,fill=False)['y']
+        x = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right fingers"],0.1,fill=False)['x']
+        y = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right fingers"],0.1,fill=False)['y']
 
-        x2 = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right toes"],0.1,fill=False)['x']
-        y2 = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right toes"],0.1,fill=False)['y']
+        x2 = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right toes"],0.1,fill=False)['x']
+        y2 = pp.likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right toes"],0.1,fill=False)['y']
+        #plot the graph of the rung positions with the curve fit line
         plt.close()
         plt.plot(rung_x,func(rung_x,*np.polyfit(rung_x,rung_y,2)),label='rung curve fit',color='k')
         plt.scatter(rung_x,rung_y,label='Rungs')
@@ -144,23 +159,23 @@ for f in folders:
 
     #filter dataframes by likelihood
     #front
-    df_wrist = likelihood_filter(df_wrist,likelihood_threshold)
-    df_fingers = likelihood_filter(df_fingers,likelihood_threshold)
+    df_wrist = pp.likelihood_filter(df_wrist,likelihood_threshold)
+    df_fingers = pp.likelihood_filter(df_fingers,likelihood_threshold)
 
     #back
-    df_ankle = likelihood_filter(df_ankle,likelihood_threshold)
-    df_toes = likelihood_filter(df_toes,likelihood_threshold)
+    df_ankle = pp.likelihood_filter(df_ankle,likelihood_threshold)
+    df_toes = pp.likelihood_filter(df_toes,likelihood_threshold)
 
 
 
     #get the x velocity peaks using clusters
-    wrist_forward_list = find_clusters(df_wrist)
-    fingers_forward_list = find_clusters(df_fingers)
+    wrist_forward_list = pp.find_clusters(df_wrist)
+    fingers_forward_list = pp.find_clusters(df_fingers)
 
-    ankle_forward_list = find_clusters(df_ankle)
-    toes_forward_list = find_clusters(df_toes)
+    ankle_forward_list = pp.find_clusters(df_ankle)
+    toes_forward_list = pp.find_clusters(df_toes)
 
-    #after curve fit with steps
+    #plot the graph after curve fit with steps
     x = df_fingers['x']
     y = df_fingers['y']
     x2 = df_toes['x']
@@ -178,34 +193,30 @@ for f in folders:
     plt.savefig("/home/ml/Documents/methods_figures/clusters/"+subject+"_"+date+'_'+run+"_position.png")
     plt.close()
 
-    #join the two points on the front left limb
     front_forward = fingers_forward_list
-    #front_forward = remove_close(sorted(front_forward))
 
-    #join two points on the back left limb
     back_forward = toes_forward_list
-    #back_forward = remove_close(sorted(back_forward))
 
-    #figure out the y position threshold. it'll be when vx and vy are approximately 0
-    y_pos_threshold_front,y_pos_threshold_back = zero_velocity_y_position()
+    #figure out the y position threshold for peakfinding
+    y_pos_threshold_front,y_pos_threshold_back = pp.zero_velocity_y_position()
 
-    fingers_slip_list = find_y_position_peaks(df_fingers,y_pos_threshold_front,ydist)
-    wrist_slip_list = find_y_position_peaks(df_wrist,y_pos_threshold_front,ydist)
+    fingers_slip_list = pp.find_y_position_peaks(df_fingers,y_pos_threshold_front,ydist)
+    wrist_slip_list = pp.find_y_position_peaks(df_wrist,y_pos_threshold_front,ydist)
 
-    ankle_slip_list = find_y_position_peaks(df_ankle,y_pos_threshold_back,ydist)
-    toes_slip_list = find_y_position_peaks(df_toes,y_pos_threshold_back,ydist)
+    ankle_slip_list = pp.find_y_position_peaks(df_ankle,y_pos_threshold_back,ydist)
+    toes_slip_list = pp.find_y_position_peaks(df_toes,y_pos_threshold_back,ydist)
 
 
-    #join front lists of slips between the two points on the forelimb
+    #using only 1 point on each limb appears to be more accurate than using the union of two points
     front_slip = fingers_slip_list#peak_list_union(wrist_slip_list,fingers_slip_list)
     #join back lists for the two points on the hindlimb
     back_slip = toes_slip_list#peak_list_union(ankle_slip_list,toes_slip_list)
 
-    #count the number of steps, hits and slips for left and right crossings
+    #count the number of steps, hits and slips for left and right crossings only on the visible side.
     if run[0] == "L":
-        #number of x peaks is the number of total steps. I don't think there are really ever any backward peaks, so we'll just ignore them for now
-        total_steps_fl = len(front_forward)#-len(fl_backward)
-        total_steps_bl = len(back_forward)#-len(bl_backward)
+        #number of x peaks is the number of total steps
+        total_steps_fl = len(front_forward)
+        total_steps_bl = len(back_forward)
         total_steps_fr = np.nan
         total_steps_br = np.nan
 
@@ -219,11 +230,11 @@ for f in folders:
         hit_count_fr = np.nan
         hit_count_br = np.nan
     if run[0] == "R":
-        #number of x peaks is the number of total steps. I don't think there are really ever any backward peaks, so we'll just ignore them for now
+        #number of x peaks is the number of total steps
         total_steps_fl = np.nan
         total_steps_bl = np.nan
-        total_steps_fr = len(front_forward)#-len(fr_backward)
-        total_steps_br = len(back_forward)#-len(br_backward)
+        total_steps_fr = len(front_forward)
+        total_steps_br = len(back_forward)
 
         slip_count_fl = np.nan
         slip_count_bl = np.nan
@@ -250,9 +261,8 @@ score_df = pd.DataFrame(scores,columns=score_cols)
 #make the date into a datetime format
 score_df["date"] = pd.to_datetime(score_df["date"])
 
-#read the human_scores file
+#open the file of manual scores
 test_human = pd.read_csv("/home/ml/Documents/updated_human_scores.csv")
-#test_human = test_human.ffill(axis=0)
 #date column into datetime format
 test_human['date'] = pd.to_datetime(test_human['date'])
 
@@ -310,7 +320,7 @@ for index,row in all_score.iterrows():
 
 #change all the calculations into a dataframe
 calc_df = pd.DataFrame(calcs,columns=["subject","week","limb","comp_score","comp_steps","comp_misses","comp_hits","human_score","human_steps","human_misses","human_hits"])
-#round the number of weeks (more useful when there are more than 2 relevant weeks of data)
+#could round the number of weeks (more useful when there are more than 2 relevant weeks of data)
 #calc_df = calc_df.round({"week":0})
 #drop all rows with any nan values
 calc_df = calc_df.dropna(axis=0)
@@ -359,7 +369,6 @@ for limb in calc_limbs:
     plt.ylabel("Number of Runs")
     plt.savefig("/home/ml/Documents/methods_figures/histograms/misses_"+name+'.png')
 
-
     #difference in hits
     plt.close()
     plt.hist(limb["hit_diff"],label='Multipoint Difference')
@@ -368,8 +377,7 @@ for limb in calc_limbs:
     plt.xlabel("Computation - Human")
     plt.ylabel("Number of Runs")
     plt.savefig("/home/ml/Documents/methods_figures/histograms/hits_"+name+'.png')
-
-
+    plt.close()
 
 #new dataframe that calculates the mean of each in that list below
 df_new = calc_df.groupby(["week","limb"])["comp_score","comp_steps","comp_misses","human_score","human_steps","human_misses"].agg(["mean",'sem'])
@@ -410,7 +418,6 @@ for limb in limbs:
     #invert x because preinjury is later alphabetically than postinjury
     plt.gca().invert_xaxis()
     plt.savefig("/home/ml/Documents/methods_figures/average_comp/perc_slip_"+name+'.png')
-
 
     plt.close()
     plt.figure()

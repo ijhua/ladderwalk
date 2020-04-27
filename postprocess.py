@@ -1,3 +1,12 @@
+import pandas as pd
+import numpy as np
+from scipy.signal import find_peaks
+from scipy.optimize import curve_fit
+from scipy import stats
+from sklearn.cluster import DBSCAN
+from statistics import median
+
+
 def func(x,a,b,c):
     '''
     A quadratic equation for use in curvefitting
@@ -86,10 +95,10 @@ def visible_limb_x_velocity_peaks(df,height,distance,direction):
     List of indexes of peaks in the "forward" and "backward" direction
     '''
     if direction.upper() == "R":
-        forward_x = find_peaks((np.gradient(df['x'])),height=height,distance=distance,prominence=1)#argrelmin(np.gradient(df['x']),mode='wrap')
+        forward_x = find_peaks((np.gradient(df['x'])),height=height,distance=distance,prominence=1)
         backward_x = find_peaks(-1*np.gradient(df['x']),height=height,distance=distance)
     elif direction.upper()=="L":
-        forward_x = find_peaks(-1*((np.gradient(df['x']))),height=height,distance=distance,prominence=1)# argrelmin(-1*np.gradient(df['x']),mode='wrap')
+        forward_x = find_peaks(-1*((np.gradient(df['x']))),height=height,distance=distance,prominence=1)
         backward_x = find_peaks(np.gradient(df['x']),height=height,distance=distance)
     return forward_x[0], backward_x[0]
 
