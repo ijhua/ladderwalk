@@ -45,7 +45,7 @@ for f in folders:
     xheight = 20
     xdist = 4
     yheight = 5
-    ydist = 3
+    ydist = 5
     zero_threshold = 5
 
     #incorporate rung information that matches the current file
@@ -272,7 +272,7 @@ all_score = score_df.merge(test_human,on=["subject","date","run","limb"])
 #drop the empty rows (should just be the rows with the side of the rat that is further away)
 all_score = all_score.dropna(axis=0)
 
-all_score.to_csv("/home/ml/Documents/methods_comparison_RN50.csv")
+all_score.to_csv("/home/ml/Documents/methods_comparison_RN50_clustering.csv")
 print("Score calculation and comparison done.... Starting on graphs")
 
 calcs=[]

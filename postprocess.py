@@ -175,13 +175,13 @@ def zero_velocity_index(df,coord,top_r,bottom_r):
 
 def zero_velocity_y_position():
     '''
-    Finds the y coordinate where velocity is close to 0. Used as a position threshold for peak-finding (for slips)
+    Finds the y coordinate where x and y velocity are close to 0. Used as a position threshold for peak-finding (for slips)
 
     Returns
     -------
     y value for the front limb and y value for the hind limb
     '''
-    all_range = 0.4
+    all_range = 0.3
 
     v_x_zero_fingers = zero_velocity_index(df_fingers,'x',all_range,all_range)
     v_y_zero_fingers = zero_velocity_index(df_fingers,'y',all_range,all_range)
@@ -192,8 +192,8 @@ def zero_velocity_y_position():
     v_zero_front = list((set(v_x_zero_fingers)|set(v_y_zero_fingers)))
     v_zero_back = list((set(v_x_zero_toes)|set(v_y_zero_toes)))
 
-    y_pos_front = (df_fingers["y"][v_zero_front]).max()+9
-    y_pos_back = (df_toes["y"][v_zero_back]).max()+9
+    y_pos_front = (df_fingers["y"][v_zero_front]).max()
+    y_pos_back = (df_toes["y"][v_zero_back]).max()
 
     return y_pos_front, y_pos_back
 
@@ -211,7 +211,7 @@ def find_y_position_peaks(df,thresh,dist):
     -------
     ndarray. indices of peaks in the y that satisfy the conditions.
     '''
-    peaks = find_peaks(df['y'],height = thresh,distance=dist,prominence=1)
+    peaks = find_peaks(df['y'],height = 3,distance=dist,prominence=1)
     return peaks[0]
 
 
@@ -280,3 +280,27 @@ def clusters_y(df):
         else:
             continue
     return [y for y in cluster_y if y >0]
+
+def inflection(df):
+    '''
+    Finds points of inflection in the acceleration in the x direction, which correspond to the transition between putting the paw down and picking it up
+
+    Parameters
+    ----------
+    df: dataframe
+
+    Returns
+    -------
+    1darray of indicies of those peaks
+    '''
+    #second derivative
+    second_x = np.gradient(np.gradient(df.x))
+    #positive peaks (index)
+    pos_peak_x = find_peaks(second_x,prominence=5,width=1,height=10)[0]
+    #negative peaks (index)
+    neg_peak_x = find_peaks(-second_x,prominence=5,width=1,height=10)[0]
+    #combine the arrays of indicies
+    peak_x = np.append(pos_peak_x,neg_peak_x)
+    #sort arrays
+    peak_x = np.sort(peak_x)
+    return peak_x
