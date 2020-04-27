@@ -176,8 +176,8 @@ def zero_velocity_y_position():
     v_zero_front = list((set(v_x_zero_fingers)|set(v_y_zero_fingers)))
     v_zero_back = list((set(v_x_zero_toes)|set(v_y_zero_toes)))
 
-    y_pos_front = (df_fingers["y"][v_zero_front]).max()+13
-    y_pos_back = (df_toes["y"][v_zero_back]).max()+13
+    y_pos_front = (df_fingers["y"][v_zero_front]).max()+9
+    y_pos_back = (df_toes["y"][v_zero_back]).max()+9
 
     return y_pos_front, y_pos_back
 
@@ -189,7 +189,7 @@ def find_y_position_peaks(df,thresh,dist):
 def find_clusters(df):
     avg = df['y'].mean()-5
     df = df.loc[df['y']>avg]
-    db = DBSCAN(eps = 20, min_samples = 3).fit(df)
+    db = DBSCAN(eps = 22, min_samples = 3).fit(df)
     core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
     core_samples_mask[db.core_sample_indices_] = True
     labels = db.labels_
@@ -205,3 +205,23 @@ def find_clusters(df):
         else:
             continue
     return cluster_center
+
+def clusters_y(df):
+    avg = df['y'].mean()-5
+    df = df.loc[df['y']>avg]
+    db = DBSCAN(eps = 20, min_samples = 3).fit(df)
+    core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+    core_samples_mask[db.core_sample_indices_] = True
+    labels = db.labels_
+    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+    n_noise_ = list(labels).count(-1)
+    unique_labels = set(labels)
+    cluster_y = []
+    for k in unique_labels:
+        class_member_mask = (labels == k)
+        if len(df[class_member_mask & core_samples_mask].index)>1:
+            center_y = median(list(df['y'][class_member_mask & core_samples_mask]))
+            cluster_y.append(center_y)
+        else:
+            continue
+    return [y for y in cluster_y if y >0]

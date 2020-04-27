@@ -7,7 +7,7 @@ left_handed = []
 #location of h5 files for analysis
 folders = []
 for rat in rats:
-    folders+=glob.glob("/home/ml/Documents/Not_TADSS_Videos/"+rat+"/cut/dlc_output_16-810/*.h5")
+    folders+=glob.glob("/home/ml/Documents/Not_TADSS_Videos/"+rat+"/cut/dlc_output_resnet50/*.h5")
 
 #set up dataframe for future
 scores = []
@@ -22,26 +22,26 @@ for f in folders:
     run = name.split("_")[2]
     subject = name.split("_")[0]
     date = name.split("_")[1]
-    if len(name.split("_")[3])==8:
+    if len(name.split("_")[3])==9:
         crossing=name.split("_")[3][-1]
-    elif len(name.split("_")[3])>8:
+    elif len(name.split("_")[3])>9:
         crossing = name.split("_")[3][-2:]
     #parameters for later
     likelihood_threshold = 0.1
     xheight = 20
     xdist = 4
     yheight = 5
-    ydist = 4
+    ydist = 3
     zero_threshold = 5
 
     #incorporate rung information that matches the current file
     #set rung file path
-    path = f.split(".")[0].split("/")[:-2]+["dlc_output_rungs"]
+    path = f.split(".")[0].split("/")[:-2]+["dlc_rung_r50"]
     rung_folder = os.path.join(*(path))
     rung_file= f.split(".")[0].split("/")[-1].split("_")[0]+"_"+f.split(".")[0].split("/")[-1].split("_")[1]+"_"+f.split(".")[0].split("/")[-1].split("_")[2]+"_"+f.split(".")[0].split("/")[-1].split("_")[3]+"_"+f.split(".")[0].split("/")[-1].split("_")[4]+"_"+f.split(".")[0].split("/")[-1].split("_")[5]
     #read the file with the rung data
-    rung_df = pd.read_hdf("/"+rung_folder+"/"+rung_file+"_"+"DLC_resnet50_LadderWalkMar12shuffle1_350000.h5")
-    rung_df = rung_df['DLC_resnet50_LadderWalkMar12shuffle1_350000']
+    rung_df = pd.read_hdf("/"+rung_folder+"/"+rung_file+"_"+"DLC_resnet50_LadderWalkMar12shuffle1_450000.h5")
+    rung_df = rung_df['DLC_resnet50_LadderWalkMar12shuffle1_450000']
     #make a list of all the rungs from 1 to 62. There are too many to do manually like with the limbs
     rung_list = []
     for i in range(1,63):
@@ -81,18 +81,18 @@ for f in folders:
             limb_back = "Dominant Back"
         #split all the limbs
         #front left
-        df_wrist = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"left wrist")
-        df_fingers = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"left fingers")
+        df_wrist = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left wrist")
+        df_fingers = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left fingers")
         #back left
-        df_ankle = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"left ankle")
-        df_toes = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"left toes")
+        df_ankle = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left ankle")
+        df_toes = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left toes")
 
         #rung curve fit
-        x = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["left fingers"],0.1,fill=False)['x']
-        y = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["left fingers"],0.1,fill=False)['y']
+        x = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left fingers"],0.1,fill=False)['x']
+        y = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left fingers"],0.1,fill=False)['y']
 
-        x2 = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["left toes"],0.1,fill=False)['x']
-        y2 = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["left toes"],0.1,fill=False)['y']
+        x2 = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left toes"],0.1,fill=False)['x']
+        y2 = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["left toes"],0.1,fill=False)['y']
         plt.close()
         plt.plot(rung_x,func(rung_x,*np.polyfit(rung_x,rung_y,2)),label='rung curve fit',color='k')
         plt.scatter(rung_x,rung_y,label='Rungs')
@@ -117,17 +117,17 @@ for f in folders:
             limb_back = "Dominant Back"
         #split all the limbs
         #front right
-        df_wrist = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right wrist")
-        df_fingers = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right fingers")
+        df_wrist = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"right wrist")
+        df_fingers = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"right fingers")
         #back right
-        df_ankle = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right ankle")
-        df_toes = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right toes")
+        df_ankle = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"right ankle")
+        df_toes = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"right toes")
 
-        x = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["right fingers"],0.1,fill=False)['x']
-        y = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["right fingers"],0.1,fill=False)['y']
+        x = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right fingers"],0.1,fill=False)['x']
+        y = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right fingers"],0.1,fill=False)['y']
 
-        x2 = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["right toes"],0.1,fill=False)['x']
-        y2 = likelihood_filter(df['DLC_resnet101_LadderWalkFeb13shuffle1_1030000']["right toes"],0.1,fill=False)['y']
+        x2 = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right toes"],0.1,fill=False)['x']
+        y2 = likelihood_filter(df['DLC_resnet50_LadderWalkFeb13shuffle1_450000']["right toes"],0.1,fill=False)['y']
         plt.close()
         plt.plot(rung_x,func(rung_x,*np.polyfit(rung_x,rung_y,2)),label='rung curve fit',color='k')
         plt.scatter(rung_x,rung_y,label='Rungs')
@@ -197,9 +197,9 @@ for f in folders:
 
 
     #join front lists of slips between the two points on the forelimb
-    front_slip = peak_list_union(wrist_slip_list,fingers_slip_list)
+    front_slip = fingers_slip_list#peak_list_union(wrist_slip_list,fingers_slip_list)
     #join back lists for the two points on the hindlimb
-    back_slip = peak_list_union(ankle_slip_list,toes_slip_list)
+    back_slip = toes_slip_list#peak_list_union(ankle_slip_list,toes_slip_list)
 
     #count the number of steps, hits and slips for left and right crossings
     if run[0] == "L":
@@ -261,7 +261,7 @@ all_score = score_df.merge(test_human,on=["subject","date","run","limb"])
 #drop the empty rows (should just be the rows with the side of the rat that is further away)
 all_score = all_score.dropna(axis=0)
 
-all_score.to_csv("/home/ml/Documents/comparison_scores_6_mc_rats_clustering.csv")
+all_score.to_csv("/home/ml/Documents/methods_comparison_RN50.csv")
 print("Score calculation and comparison done.... Starting on graphs")
 
 calcs=[]

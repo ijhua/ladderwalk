@@ -8,7 +8,7 @@ count = 1
 #location of h5 files for analysis
 folders = []
 for rat in rats:
-    folders+=glob.glob("/home/ml/Documents/Not_TADSS_Videos/"+rat+"/cut/dlc_output_16-810/*.h5")
+    folders+=glob.glob("/home/ml/Documents/Not_TADSS_Videos/"+rat+"/cut/dlc_output_resnet50/*.h5")
 data = []
 ind = []
 #iterate through every file
@@ -133,11 +133,11 @@ for f in folders:
             limb_back = "Dominant Back"
         #split all the limbs
         #front left
-        #df_wrist = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"left wrist")
-        df_fingers = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"left fingers")
+        #df_wrist = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left wrist")
+        df_fingers = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left fingers")
         #back left
-        #df_ankle = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"left ankle")
-        df_toes = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"left toes")
+        #df_ankle = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left ankle")
+        df_toes = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"left toes")
 
     #right crossings
     if run[0] == "R":
@@ -150,11 +150,11 @@ for f in folders:
             limb_back = "Dominant Back"
         #split all the limbs
         #front right
-        #df_wrist = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right wrist")
-        df_fingers = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right fingers")
+        #df_wrist = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"right wrist")
+        df_fingers = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"right fingers")
         #back right
-        #df_ankle = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right ankle")
-        df_toes = extract_limbs(df,'DLC_resnet101_LadderWalkFeb13shuffle1_1030000',"right toes")
+        #df_ankle = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"right ankle")
+        df_toes = extract_limbs(df,'DLC_resnet50_LadderWalkFeb13shuffle1_450000',"right toes")
 
     #filter dataframes by likelihood
     #front
@@ -166,34 +166,33 @@ for f in folders:
     #df_ankle = likelihood_filter(df_ankle,likelihood_threshold)
     df_toes = likelihood_filter(df_toes,likelihood_threshold)
     df_toes.name = limb_back
-    '''    dfs = [df_fingers,df_toes]
-        for df in dfs:
-            limb = df.name
-            second_x = np.gradient(np.gradient(df.x))
-            pos_peak_x = find_peaks(second_x,prominence=5,width=1,height=10)[0]
-            neg_peak_x = find_peaks(-second_x,prominence=5,width=1,height=10)[0]
-            peak_x = np.append(pos_peak_x,neg_peak_x)
-            peak_x = np.sort(peak_x)
+    dfs = [df_fingers,df_toes]
+    for df in dfs:
+        limb = df.name
+        second_x = np.gradient(np.gradient(df.x))
+        pos_peak_x = find_peaks(second_x,prominence=5,width=1,height=10)[0]
+        neg_peak_x = find_peaks(-second_x,prominence=5,width=1,height=10)[0]
+        peak_x = np.append(pos_peak_x,neg_peak_x)
+        peak_x = np.sort(peak_x)
 
-            plt.close()
-            plt.plot(df.x,second_x)
-            plt.scatter(df.x.iloc[peak_x],second_x[peak_x])
-            plt.xlabel('x')
-            plt.ylabel('x acceleration')
-            plt.title(subject + " " + date + " "+ run + " "+ limb + " Second Derivative Peaks")
-            plt.savefig("/home/ml/Documents/methods_figures/inflection/"+subject+"_"+date+"_"+run+"_"+limb+"_"+"poi.png")
+        plt.close()
+        plt.plot(df.x,second_x)
+        plt.scatter(df.x.iloc[peak_x],second_x[peak_x])
+        plt.xlabel('x')
+        plt.ylabel('x acceleration')
+        plt.title(subject + " " + date + " "+ run + " "+ limb + " Second Derivative Peaks")
+        plt.savefig("/home/ml/Documents/methods_figures/inflection/"+subject+"_"+date+"_"+run+"_"+limb+"_"+"poi.png")
 
-            plt.close()
-            plt.plot(df.x,df.y)
-            plt.scatter(df.x.iloc[peak_x],df.y.iloc[peak_x])
-            plt.gca().invert_yaxis()
-            plt.xlabel('x')
-            plt.ylabel('y')
-            plt.title(subject + " " + date + " "+ run + " "+ limb + " Position Windows")
-            plt.savefig("/home/ml/Documents/methods_figures/inflection/"+subject+"_"+date+"_"+run+"_"+limb+"_"+"window.png")
-            plt.close()
-
-    print("Done")'''
+        plt.close()
+        plt.plot(df.x,df.y)
+        plt.scatter(df.x.iloc[peak_x],df.y.iloc[peak_x])
+        plt.gca().invert_yaxis()
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.title(subject + " " + date + " "+ run + " "+ limb + " Position Windows")
+        plt.savefig("/home/ml/Documents/methods_figures/inflection/"+subject+"_"+date+"_"+run+"_"+limb+"_"+"window.png")
+        plt.close()
+    print("Graphs done")
     dfs = [df_fingers,df_toes]
     for df in dfs:
         limb = df.name
@@ -376,11 +375,11 @@ for limb in limbs:
     name = limb["limb"][0]
 
     plt.close()
-    if limb['t_t'][0]<0.05:
+    '''if limb['t_t'][0]<0.05:
         plt.scatter("Postinjury",limb[('t', 'mean')].max(),marker="$*$")
     elif limb['t_t'][0]<0.001:
         plt.scatter("Postinjury",limb[('t', 'mean')].max(),marker="$**$")
-    plt.annotate(str(round(limb['t_t'][0],5)),("Postinjury",limb[('t', 'mean')].max()))
+    plt.annotate(str(round(limb['t_t'][0],5)),("Postinjury",limb[('t', 'mean')].max()))'''
     plt.errorbar(limb[('week', '')],limb[('t', 'mean')],yerr=limb[('t', 'sem')],uplims=True, lolims=True)
     plt.xlabel("Week")
     plt.ylabel("Time (sec)")
@@ -389,11 +388,11 @@ for limb in limbs:
     plt.savefig("/home/ml/Documents/methods_figures/loc_trends/"+name+"_avg_time.png")
 
     plt.close()
-    if limb['t_d'][0]<0.05:
+    '''if limb['t_d'][0]<0.05:
         plt.scatter("Postinjury",limb[('d', 'mean')].max(),marker="$*$")
     elif limb['t_d'][0]<0.001:
         plt.scatter("Postinjury",limb[('d', 'mean')].max(),marker="$**$")
-    plt.annotate(str(round(limb['t_d'][0],5)),("Postinjury",limb[('d', 'mean')].max()))
+    plt.annotate(str(round(limb['t_d'][0],5)),("Postinjury",limb[('d', 'mean')].max()))'''
     plt.errorbar(limb[('week', '')],limb['d', 'mean'],yerr=limb[('d', 'sem')],uplims=True, lolims=True)
     plt.xlabel("Week")
     plt.ylabel("Distance (cm)")
@@ -402,11 +401,11 @@ for limb in limbs:
     plt.savefig("/home/ml/Documents/methods_figures/loc_trends/"+name+"_avg_distance.png")
 
     plt.close()
-    if limb['t_dx'][0]<0.05:
+    '''if limb['t_dx'][0]<0.05:
         plt.scatter("Postinjury",limb[('dx', 'mean')].max(),marker="$*$")
     elif limb['t_dx'][0]<0.001:
         plt.scatter("Postinjury",limb[('dx', 'mean')].max(),marker="$**$")
-    plt.annotate(str(round(limb['t_dx'][0],5)),("Postinjury",limb[('dx', 'mean')].max()))
+    plt.annotate(str(round(limb['t_dx'][0],5)),("Postinjury",limb[('dx', 'mean')].max()))'''
     plt.errorbar(limb[('week', '')],limb[('dx', 'mean')],yerr=limb[('dx', 'sem')],uplims=True, lolims=True)
     plt.xlabel("Week")
     plt.ylabel("Distance (cm)")
@@ -415,10 +414,10 @@ for limb in limbs:
     plt.savefig("/home/ml/Documents/methods_figures/loc_trends/"+name+"_avg_x_distance.png")
 
     plt.close()
-    if limb['t_v'][0]<0.05:
+    '''if limb['t_v'][0]<0.05:
         plt.scatter("Postinjury",limb[('v', 'mean')].max(),marker="$*$")
     elif limb['t_v'][0]<0.001:
-        plt.scatter("Postinjury",limb[('v', 'mean')].max(),marker="$**$")
+        plt.scatter("Postinjury",limb[('v', 'mean')].max(),marker="$**$")'''
     plt.annotate(str(round(limb['t_v'][0],5)),("Postinjury",limb[('v', 'mean')].max()))
     plt.errorbar(limb[('week', '')],limb[('v', 'mean')],yerr=limb[('v', 'sem')],uplims=True, lolims=True)
     plt.xlabel("Week")
@@ -428,10 +427,10 @@ for limb in limbs:
     plt.savefig("/home/ml/Documents/methods_figures/loc_trends/"+name+"_avg_velocity.png")
 
     plt.close()
-    if limb['t_vx'][0]<0.05:
+    '''if limb['t_vx'][0]<0.05:
         plt.scatter("Postinjury",limb[('vx', 'mean')].max(),marker="$*$")
     elif limb['t_vx'][0]<0.001:
-        plt.scatter("Postinjury",limb[('vx', 'mean')].maxs(),marker="$**$")
+        plt.scatter("Postinjury",limb[('vx', 'mean')].maxs(),marker="$**$")'''
     plt.annotate(str(round(limb['t_vx'][0],5)),("Postinjury",limb[('vx', 'mean')].max()))
     plt.errorbar(limb[('week', '')],limb[('vx', 'mean')],yerr=limb[('vx', 'sem')],uplims=True, lolims=True)
     plt.xlabel("Week")
