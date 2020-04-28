@@ -10,7 +10,7 @@ from math import hypot
 import datetime
 from IPython.display import clear_output
 
-os.system('python3 postprocess.py')
+os.system('python3 /home/ml/Documents/ladderwalk/postprocess.py')
 
 
 # list of rats

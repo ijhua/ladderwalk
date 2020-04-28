@@ -9,7 +9,7 @@ from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 from scipy import stats
 
-os.system('python3 postprocess.py')
+os.system('python3 /home/ml/Documents/ladderwalk/postprocess.py')
 
 
 # list of rats
