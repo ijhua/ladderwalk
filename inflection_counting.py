@@ -25,6 +25,7 @@ for rat in rats:
 
 #set up dataframe for future
 scores = []
+excluded_scores =[]
 score_cols = ["subject", "date", "run", "crossing","limb","comp_hits","comp_misses","comp_steps"]
 
 #iterate through every file
@@ -191,10 +192,22 @@ for f in folders:
     score_front_r = [subject,date,run,crossing,limb_front,hit_count_fr,slip_count_fr,total_steps_fr]
     score_back_r = [subject,date,run,crossing,limb_back,hit_count_br,slip_count_br,total_steps_br]
     #put each of those lists into the larger list that we made a the start
-    scores.append(score_front_l)
-    scores.append(score_back_l)
-    scores.append(score_front_r)
-    scores.append(score_back_r)
+    if hit_count_fl<=0:
+        excluded_scores.append(score_front_l)
+    else:
+        scores.append(score_front_l)
+    if hit_count_bl<=0:
+        excluded_scores.append(score_back_l)
+    else:
+        scores.append(score_back_l)
+    if hit_count_fr<=0:
+        excluded_scores.append(score_front_r)
+    else:
+        scores.append(score_front_r)
+    if hit_count_br<=0:
+        excluded_scores.append(score_back_r)
+    else:
+        scores.append(score_back_r)
 
 #make the list into a dataframe with all of the scores
 score_df = pd.DataFrame(scores,columns=score_cols)
@@ -212,4 +225,12 @@ all_score = score_df.merge(test_human,on=["subject","date","run","limb"])
 all_score = all_score.dropna(axis=0)
 
 all_score.to_csv("/home/ml/Documents/methods_comparison_RN50_inflection.csv")
-print("Score calculation and comparison done.... Starting on graphs")
+
+exclude_df  = pd.DataFrame(excluded_scores,columns=score_cols)
+exclude_df["date"] = pd.to_datetime(exclude_df["date"])
+
+comb_ex_df = exclude_df.merge(test_human,on=["subject","date","run","limb"])
+comb_ex_df = comb_ex_df.dropna(axis=0)
+comb_ex_df.to_csv("/home/ml/Documents/methods_excluded_inflection.csv")
+
+print("Score calculation and comparison done.")
