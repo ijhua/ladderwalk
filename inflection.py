@@ -14,7 +14,7 @@ os.system('python3 /home/ml/Documents/ladderwalk/postprocess.py')
 
 
 # list of rats
-rats = ["MC61","MC87","MC30","MC70","MC45","MC78"]
+rats = ["MC61","MC87","MC30","MC70","MC78"]
 #define handedness of the rats
 right_handed = ["MC45","MC61","MC78","MC87","MC30","MC70"]
 left_handed = []

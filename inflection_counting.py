@@ -13,7 +13,7 @@ os.system('python3 /home/ml/Documents/ladderwalk/postprocess.py')
 
 
 # list of rats
-rats = ["MC61","MC87","MC30","MC70","MC45","MC78"]
+rats = ["MC61","MC87","MC30","MC70","MC78"]
 #define handedness of the rats
 right_handed = ["MC45","MC61","MC78","MC87","MC30","MC70"]
 left_handed = []
@@ -26,7 +26,7 @@ for rat in rats:
 #set up dataframe for future
 scores = []
 excluded_scores =[]
-score_cols = ["subject", "date", "run", "crossing","limb","comp_hits","comp_misses","comp_steps"]
+score_cols = ["subject", "date","week_number","week_category", "run", "crossing","limb","comp_hits","comp_misses","comp_steps"]
 
 #iterate through every file
 for f in folders:
@@ -48,6 +48,25 @@ for f in folders:
     yheight = 5
     ydist = 5
     zero_threshold = 5
+
+    if subject == "MC30":
+        date1 = dt.datetime(2019,11,12)
+    elif subject == "MC70":
+        date1 = dt.datetime(2019,3,19)
+    elif subject == "MC45":
+        date1 = dt.datetime(2019,7,23)
+    elif subject == "MC61":
+        date1 = dt.datetime(2019,6,11)
+    elif subject == "MC78":
+            date1 = dt.datetime(2019,4,2)
+    elif subject == "MC87":
+        date1 = dt.datetime(2018,12,17)
+    week_num = (pd.to_datetime(date).date() - date1.date()).days/7
+    week_round = round(week_num,0)
+    if week_num <=0:
+        week_cat = "Preinjury"
+    if week_num>0:
+        week_cat="Postinjury"
 
     #incorporate rung information that matches the current file
     #set rung file path
@@ -187,10 +206,10 @@ for f in folders:
         hit_count_fr = total_steps_fr - slip_count_fr
         hit_count_br = total_steps_br - slip_count_br
     #define lists for each limb for all of the scores that will be a row in the final dataframe
-    score_front_l = [subject,date,run,crossing,limb_front,hit_count_fl,slip_count_fl,total_steps_fl]
-    score_back_l = [subject,date,run,crossing,limb_back,hit_count_bl,slip_count_bl,total_steps_bl]
-    score_front_r = [subject,date,run,crossing,limb_front,hit_count_fr,slip_count_fr,total_steps_fr]
-    score_back_r = [subject,date,run,crossing,limb_back,hit_count_br,slip_count_br,total_steps_br]
+    score_front_l = [subject,date,week_round,week_cat,run,crossing,limb_front,hit_count_fl,slip_count_fl,total_steps_fl]
+    score_back_l = [subject,date,week_round,week_cat,run,crossing,limb_back,hit_count_bl,slip_count_bl,total_steps_bl]
+    score_front_r = [subject,date,week_round,week_cat,run,crossing,limb_front,hit_count_fr,slip_count_fr,total_steps_fr]
+    score_back_r = [subject,date,week_round,week_cat,run,crossing,limb_back,hit_count_br,slip_count_br,total_steps_br]
     #put each of those lists into the larger list that we made a the start
     if hit_count_fl<=0:
         excluded_scores.append(score_front_l)
@@ -233,4 +252,160 @@ comb_ex_df = exclude_df.merge(test_human,on=["subject","date","run","limb"])
 comb_ex_df = comb_ex_df.dropna(axis=0)
 comb_ex_df.to_csv("/home/ml/Documents/methods_excluded_inflection.csv")
 
-print("Score calculation and comparison done.")
+print("Score calculation and comparison done. Working on graphs")
+
+
+
+calcs=[]
+#interate through every row in the dataframe.
+#this way is slower than just subtracting columns, but it allows us to set the date of injury as 0
+#TODO: make this section more efficient with time and maybe just make it a dict or datafraem for when there are more rats to deal with
+for index,row in all_score.iterrows():
+    #get the subject ID
+    subject = row['subject']
+    week = row['week_category']
+    limb = row['limb']
+    #only calculate the computational score if the number of steps is not 0
+    if row["comp_steps"] != 0:
+        comp_score = row["comp_misses"]/row["comp_steps"]*100
+    else:
+        comp_score = np.nan
+    #define the main calculations between columns
+    comp_steps = row["comp_steps"]
+    comp_slips = row["comp_misses"]
+    comp_hits = row['comp_hits']
+    human_score = row["human_miss"]/row["human_steps"]*100
+    human_steps = row["human_steps"]
+    human_miss = row["human_miss"]
+    human_hits = row["human_hit"]
+    #append to the list
+    calcs.append([subject,week,limb,comp_score,comp_steps,comp_slips,comp_hits,human_score,human_steps,human_miss,human_hits])
+#change all the calculations into a dataframe
+calc_df = pd.DataFrame(calcs,columns=["subject","week","limb","comp_score","comp_steps","comp_misses","comp_hits","human_score","human_steps","human_misses","human_hits"])
+#could round the number of weeks (more useful when there are more than 2 relevant weeks of data)
+#calc_df = calc_df.round({"week":0})
+#drop all rows with any nan values
+calc_df = calc_df.dropna(axis=0)
+
+#for non-averaged data (to make histogram and pairwise comparisons)
+new_calc = calc_df
+#calculate the new columns
+new_calc["step_diff"] = new_calc["comp_steps"]-new_calc["human_steps"]
+new_calc["miss_diff"] = new_calc["comp_misses"]-new_calc["human_misses"]
+new_calc["hit_diff"] = new_calc["comp_hits"]-new_calc["human_hits"]
+
+#make dataframes for each limb
+cfd = new_calc.loc[new_calc["limb"] == "Dominant Front"]
+
+cfn = new_calc.loc[new_calc["limb"] =="Nondominant Front"]
+
+cbd = new_calc.loc[new_calc["limb"] =="Dominant Back"]
+
+cbn = new_calc.loc[new_calc["limb"] =="Nondominant Back"]
+
+#list of dataframes separated by limb
+calc_limbs = [cfd,cfn,cbd,cbn]
+
+#make 3 graphs for each limb
+#TODO: change the titles to be less jargony
+for limb in calc_limbs:
+    limb = limb.reset_index()
+    #name of limb to go in graph title
+    name = limb["limb"][0]
+
+    #Difference in steps
+    plt.close()
+    plt.hist(limb["step_diff"],label='Multipoint Difference')
+    plt.legend()
+    plt.title("Difference in number of steps "+name)
+    plt.xlabel("Computation - Human")
+    plt.ylabel("Number of Runs")
+    plt.savefig("/home/ml/Documents/methods_figures/histograms_inflection/steps_"+name+'.png')
+
+    #difference in misses
+    plt.close()
+    plt.hist(limb["miss_diff"],label='Multipoint Difference')
+    plt.legend()
+    plt.title("Difference in number of misses "+name)
+    plt.xlabel("Computation - Human")
+    plt.ylabel("Number of Runs")
+    plt.savefig("/home/ml/Documents/methods_figures/histograms_inflection/misses_"+name+'.png')
+
+    #difference in hits
+    plt.close()
+    plt.hist(limb["hit_diff"],label='Multipoint Difference')
+    plt.legend()
+    plt.title("Difference in number of hits "+name)
+    plt.xlabel("Computation - Human")
+    plt.ylabel("Number of Runs")
+    plt.savefig("/home/ml/Documents/methods_figures/histograms_inflection/hits_"+name+'.png')
+    plt.close()
+
+#new dataframe that calculates the mean of each in that list below
+df_new = calc_df.groupby(["week","limb"])["comp_score","comp_steps","comp_misses","human_score","human_steps","human_misses"].agg(["mean",'sem'])
+
+df_new=df_new.reset_index()
+df_new = df_new.sort_values(by=["week"])
+
+#separate dataframe by limb
+fd = df_new.loc[df_new["limb"] == "Dominant Front"]
+
+fn = df_new.loc[df_new["limb"] =="Nondominant Front"]
+
+bd = df_new.loc[df_new["limb"] =="Dominant Back"]
+
+bn = df_new.loc[df_new["limb"] =="Nondominant Back"]
+
+#list of limbs
+limbs = [fd,fn,bd,bn]
+
+#graphs: average of each
+#make 3 graphs per limb: percent slip, number of steps, number of Slips
+#TODO: make titles less jargony
+for limb in limbs:
+    limb = limb.reset_index()
+    name = limb["limb"][0]
+
+    plt.close()
+    plt.figure()
+    plt.rc('xtick')
+    plt.rc('ytick')
+    plt.errorbar(limb["week"],limb["comp_score"]["mean"],yerr=limb["comp_score"]["sem"] , uplims=True, lolims=True,label="Computational")
+    plt.errorbar(limb["week"],limb["human_score"]["mean"],yerr=limb["human_score"]["sem"] , uplims=True, lolims=True,label="Human")
+    plt.title( name+" Percent Slip Difference")
+    plt.xlabel("Week")
+    plt.ylabel("%slip")
+    #plt.ylim(bottom=0)
+    plt.legend()
+    #invert x because preinjury is later alphabetically than postinjury
+    plt.gca().invert_xaxis()
+    plt.savefig("/home/ml/Documents/methods_figures/inflection_avg/perc_slip_"+name+'.png')
+
+    plt.close()
+    plt.figure()
+    plt.rc('xtick')
+    plt.rc('ytick')
+    plt.errorbar(limb["week"],limb["comp_steps"]["mean"],yerr=limb["comp_steps"]["sem"] , uplims=True, lolims=True,label="Computational")
+    plt.errorbar(limb["week"],limb["human_steps"]["mean"],yerr=limb["human_steps"]["sem"] , uplims=True, lolims=True,label="Human")
+    plt.title( name+" Step Difference")
+    plt.xlabel("Week")
+    plt.ylabel("Number of Steps")
+    #plt.ylim(bottom=0)
+    plt.legend()
+    plt.gca().invert_xaxis()
+    plt.savefig("/home/ml/Documents/methods_figures/inflection_avg/steps_"+name+'.png')
+
+    plt.close()
+    plt.figure()
+    plt.rc('xtick')
+    plt.rc('ytick')
+    plt.errorbar(limb["week"],limb["comp_misses"]["mean"],yerr=limb["comp_misses"]["sem"] , uplims=True, lolims=True,label="Computational")
+    plt.errorbar(limb["week"],limb["human_misses"]["mean"],yerr=limb["human_misses"]["sem"] , uplims=True, lolims=True,label="Human")
+    plt.title( name+" Slip Difference")
+    plt.xlabel("Week")
+    plt.ylabel("Number of Slips")
+    #plt.ylim(bottom=0)
+    plt.legend()
+    plt.gca().invert_xaxis()
+    plt.savefig("/home/ml/Documents/methods_figures/inflection_avg/slips_"+name+'.png')
+print("All done")

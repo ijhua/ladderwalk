@@ -7,6 +7,7 @@ from sklearn.cluster import DBSCAN
 from statistics import median
 
 
+
 def func(x,a,b,c):
     '''
     A quadratic equation for use in curvefitting

@@ -13,7 +13,7 @@ os.system('python3 /home/ml/Documents/ladderwalk/postprocess.py')
 
 
 # list of rats
-rats = ["MC61","MC87","MC30","MC70","MC45","MC78"]
+rats = ["MC61","MC87","MC30","MC70","MC78"]
 #define handedness of the rats
 right_handed = ["MC45","MC61","MC78","MC87","MC30","MC70"]
 left_handed = []
@@ -26,7 +26,9 @@ for rat in rats:
 #set up dataframe for future
 scores = []
 excluded_scores =[]
-score_cols = ["subject", "date", "run", "crossing","limb","comp_hits","comp_misses","comp_steps"]
+score_cols = ["subject", "date","week_number","week_category", "run", "crossing","limb","comp_hits","comp_misses","comp_steps"]
+
+
 
 #iterate through every file
 for f in folders:
@@ -48,6 +50,25 @@ for f in folders:
     yheight = 5
     ydist = 5
     zero_threshold = 5
+
+    if subject == "MC30":
+        date1 = dt.datetime(2019,11,12)
+    elif subject == "MC70":
+        date1 = dt.datetime(2019,3,19)
+    elif subject == "MC45":
+        date1 = dt.datetime(2019,7,23)
+    elif subject == "MC61":
+        date1 = dt.datetime(2019,6,11)
+    elif subject == "MC78":
+            date1 = dt.datetime(2019,4,2)
+    elif subject == "MC87":
+        date1 = dt.datetime(2018,12,17)
+    week_num = (pd.to_datetime(date).date() - date1.date()).days/7
+    week_round = round(week_num,0)
+    if week_num <=0:
+        week_cat = "Preinjury"
+    if week_num>0:
+        week_cat="Postinjury"
 
     #incorporate rung information that matches the current file
     #set rung file path
@@ -248,10 +269,10 @@ for f in folders:
         hit_count_fr = total_steps_fr - slip_count_fr
         hit_count_br = total_steps_br - slip_count_br
     #define lists for each limb for all of the scores that will be a row in the final dataframe
-    score_front_l = [subject,date,run,crossing,limb_front,hit_count_fl,slip_count_fl,total_steps_fl]
-    score_back_l = [subject,date,run,crossing,limb_back,hit_count_bl,slip_count_bl,total_steps_bl]
-    score_front_r = [subject,date,run,crossing,limb_front,hit_count_fr,slip_count_fr,total_steps_fr]
-    score_back_r = [subject,date,run,crossing,limb_back,hit_count_br,slip_count_br,total_steps_br]
+    score_front_l = [subject,date,week_round,week_cat,run,crossing,limb_front,hit_count_fl,slip_count_fl,total_steps_fl]
+    score_back_l = [subject,date,week_round,week_cat,run,crossing,limb_back,hit_count_bl,slip_count_bl,total_steps_bl]
+    score_front_r = [subject,date,week_round,week_cat,run,crossing,limb_front,hit_count_fr,slip_count_fr,total_steps_fr]
+    score_back_r = [subject,date,week_round,week_cat,run,crossing,limb_back,hit_count_br,slip_count_br,total_steps_br]
     #put each of those lists into the larger list that we made a the start
     if hit_count_fl<=0:
         excluded_scores.append(score_front_l)
@@ -301,26 +322,7 @@ calcs=[]
 for index,row in all_score.iterrows():
     #get the subject ID
     subject = row['subject']
-    #Set the date of injury for each rat
-    if subject == "MC30":
-        date1 = dt.datetime(2019,11,12)
-    elif subject == "MC70":
-        date1 = dt.datetime(2019,3,19)
-    elif subject == "MC45":
-        date1 = dt.datetime(2019,7,23)
-    elif subject == "MC61":
-        date1 = dt.datetime(2019,6,11)
-    elif subject == "MC78":
-            date1 = dt.datetime(2019,4,2)
-    elif subject == "MC87":
-        date1 = dt.datetime(2018,12,17)
-    week_num = (row['date'] - date1).days/7
-    #change week number into binary categories: pre and post injury
-    if week_num <=0:
-        week = "Preinjury"
-    if week_num>0:
-        week="Postinjury"
-    #definethe limb column
+    week = row['week_category']
     limb = row['limb']
     #only calculate the computational score if the number of steps is not 0
     if row["comp_steps"] != 0:
@@ -337,7 +339,6 @@ for index,row in all_score.iterrows():
     human_hits = row["human_hit"]
     #append to the list
     calcs.append([subject,week,limb,comp_score,comp_steps,comp_slips,comp_hits,human_score,human_steps,human_miss,human_hits])
-
 #change all the calculations into a dataframe
 calc_df = pd.DataFrame(calcs,columns=["subject","week","limb","comp_score","comp_steps","comp_misses","comp_hits","human_score","human_steps","human_misses","human_hits"])
 #could round the number of weeks (more useful when there are more than 2 relevant weeks of data)
@@ -378,7 +379,7 @@ for limb in calc_limbs:
     plt.title("Difference in number of steps "+name)
     plt.xlabel("Computation - Human")
     plt.ylabel("Number of Runs")
-    plt.savefig("/home/ml/Documents/methods_figures/histograms/steps_"+name+'.png')
+    plt.savefig("/home/ml/Documents/methods_figures/histograms_cluster/steps_"+name+'.png')
 
     #difference in misses
     plt.close()
@@ -387,7 +388,7 @@ for limb in calc_limbs:
     plt.title("Difference in number of misses "+name)
     plt.xlabel("Computation - Human")
     plt.ylabel("Number of Runs")
-    plt.savefig("/home/ml/Documents/methods_figures/histograms/misses_"+name+'.png')
+    plt.savefig("/home/ml/Documents/methods_figures/histograms_cluster/misses_"+name+'.png')
 
     #difference in hits
     plt.close()
@@ -396,7 +397,7 @@ for limb in calc_limbs:
     plt.title("Difference in number of hits "+name)
     plt.xlabel("Computation - Human")
     plt.ylabel("Number of Runs")
-    plt.savefig("/home/ml/Documents/methods_figures/histograms/hits_"+name+'.png')
+    plt.savefig("/home/ml/Documents/methods_figures/histograms_cluster/hits_"+name+'.png')
     plt.close()
 
 #new dataframe that calculates the mean of each in that list below
@@ -433,11 +434,11 @@ for limb in limbs:
     plt.title( name+" Percent Slip Difference")
     plt.xlabel("Week")
     plt.ylabel("%slip")
-    plt.ylim(bottom=0)
+    #plt.ylim(bottom=0)
     plt.legend()
     #invert x because preinjury is later alphabetically than postinjury
     plt.gca().invert_xaxis()
-    plt.savefig("/home/ml/Documents/methods_figures/average_comp/perc_slip_"+name+'.png')
+    plt.savefig("/home/ml/Documents/methods_figures/cluster_avg/perc_slip_"+name+'.png')
 
     plt.close()
     plt.figure()
@@ -448,10 +449,10 @@ for limb in limbs:
     plt.title( name+" Step Difference")
     plt.xlabel("Week")
     plt.ylabel("Number of Steps")
-    plt.ylim(bottom=0)
+    #plt.ylim(bottom=0)
     plt.legend()
     plt.gca().invert_xaxis()
-    plt.savefig("/home/ml/Documents/methods_figures/average_comp/steps_"+name+'.png')
+    plt.savefig("/home/ml/Documents/methods_figures/cluster_avg/steps_"+name+'.png')
 
     plt.close()
     plt.figure()
@@ -462,8 +463,8 @@ for limb in limbs:
     plt.title( name+" Slip Difference")
     plt.xlabel("Week")
     plt.ylabel("Number of Slips")
-    plt.ylim(bottom=0)
+    #plt.ylim(bottom=0)
     plt.legend()
     plt.gca().invert_xaxis()
-    plt.savefig("/home/ml/Documents/methods_figures/average_comp/slips_"+name+'.png')
+    plt.savefig("/home/ml/Documents/methods_figures/cluster_avg/slips_"+name+'.png')
 print("All done")
