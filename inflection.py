@@ -272,10 +272,10 @@ for f in folders:
                 ind.append([subject,date,week,run,limb,framerate,col,dt,dx,dy,d,vx,vy,v])
     count+=1
 
-ind_df = pd.DataFrame(ind,columns=["subject","date","week","run","limb","framerate","step_no","time","dx","dy","distance","vx","vy","velocity"])
+ind_df = pd.DataFrame(ind,columns=["subject","date","injury","run","limb","framerate","step_no","time","dx","dy","distance","vx","vy","velocity"])
 ind_df["date"] = pd.to_datetime(ind_df["date"])
-ind_df.to_csv("/home/ml/Documents/individual_steps.csv")
-
+ind_df.to_csv("/home/ml/Documents/individual_steps_"+datetime.datetime.today().strftime('%Y-%m-%d')+".csv")
+'''
 calcs = []
 for index,row in ind_df.iterrows():
     #get the subject ID
@@ -297,15 +297,16 @@ calc_df = calc_df.rename({"time":"t","distance":"d","velocity":"v"})
 #trends (calculate mean and sem for each parameter)
 trend = calc_df.groupby(["week","limb"])["t","dx","d","vx","v"].agg(["mean","sem"])
 trend = trend.reset_index()
-trend.to_csv("/home/ml/Documents/avg_of_all_steps.csv")
-
+trend.to_csv("/home/ml/Documents/avg_of_all_steps.csv")'''
+print("Done with CSV")
+'''
 fd = trend.loc[trend["limb"]=="Dominant Front"]
 bd = trend.loc[trend["limb"]=="Dominant Back"]
 fn = trend.loc[trend["limb"]=="Nondominant Front"]
-bn = trend.loc[trend["limb"]=="Nondominant Back"]
+bn = trend.loc[trend["limb"]=="Nondominant Back"]'''
 
 #plot graphs of pre and post injury for each of the calculated averages
-limbs = [fd,bd,fn,bn]
+'''limbs = [fd,bd,fn,bn]
 for limb in limbs:
     limb = limb.reset_index()
     name = limb["limb"][0]
@@ -353,4 +354,4 @@ for limb in limbs:
     plt.savefig("/home/ml/Documents/methods_figures/loc_trends/"+name+"_avg_x_velocity.png")
 
     plt.close()
-print("Done")
+print("Done")'''

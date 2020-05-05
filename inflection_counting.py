@@ -26,7 +26,7 @@ for rat in rats:
 #set up dataframe for future
 scores = []
 excluded_scores =[]
-score_cols = ["subject", "date","week_number","week_category", "run", "crossing","limb","comp_hits","comp_misses","comp_steps"]
+score_cols = ["subject", "date","week_number","injury", "run", "crossing","limb","comp_hit","comp_miss","comp_steps","comp_error_rate"]
 
 #iterate through every file
 for f in folders:
@@ -189,6 +189,12 @@ for f in folders:
         hit_count_bl = total_steps_bl - slip_count_bl
         hit_count_fr = np.nan
         hit_count_br = np.nan
+
+        error_fl = slip_count_fl/total_steps_fl*100
+        error_bl = slip_count_bl/total_steps_bl*100
+        error_fr = np.nan
+        error_br = np.nan
+
     if run[0] == "R":
         #number of x peaks is the number of total steps
         total_steps_fl = np.nan
@@ -205,11 +211,17 @@ for f in folders:
         hit_count_bl = np.nan
         hit_count_fr = total_steps_fr - slip_count_fr
         hit_count_br = total_steps_br - slip_count_br
+
+        error_fl = np.nan
+        error_bl = np.nan
+        error_fr = slip_count_fr/total_steps_fr*100
+        error_br = slip_count_br/total_steps_br*100
+
     #define lists for each limb for all of the scores that will be a row in the final dataframe
-    score_front_l = [subject,date,week_round,week_cat,run,crossing,limb_front,hit_count_fl,slip_count_fl,total_steps_fl]
-    score_back_l = [subject,date,week_round,week_cat,run,crossing,limb_back,hit_count_bl,slip_count_bl,total_steps_bl]
-    score_front_r = [subject,date,week_round,week_cat,run,crossing,limb_front,hit_count_fr,slip_count_fr,total_steps_fr]
-    score_back_r = [subject,date,week_round,week_cat,run,crossing,limb_back,hit_count_br,slip_count_br,total_steps_br]
+    score_front_l = [subject,date,week_round,week_cat,run,crossing,limb_front,hit_count_fl,slip_count_fl,total_steps_fl,error_fl]
+    score_back_l = [subject,date,week_round,week_cat,run,crossing,limb_back,hit_count_bl,slip_count_bl,total_steps_bl,error_bl]
+    score_front_r = [subject,date,week_round,week_cat,run,crossing,limb_front,hit_count_fr,slip_count_fr,total_steps_fr,error_fr]
+    score_back_r = [subject,date,week_round,week_cat,run,crossing,limb_back,hit_count_br,slip_count_br,total_steps_br,error_br]
     #put each of those lists into the larger list that we made a the start
     if hit_count_fl<=0:
         excluded_scores.append(score_front_l)
@@ -234,26 +246,29 @@ score_df = pd.DataFrame(scores,columns=score_cols)
 score_df["date"] = pd.to_datetime(score_df["date"])
 
 #open the file of manual scores
-test_human = pd.read_csv("/home/ml/Documents/updated_human_scores.csv")
+test_human = pd.read_csv("/home/ml/Downloads/ICC_prelim_5-4-2020.csv")
 #date column into datetime format
 test_human['date'] = pd.to_datetime(test_human['date'])
-
+test_human["avg_human_hit"] = test_human[["human_hit_1","human_hit_2"]].mean(axis=1)
+test_human["avg_human_miss"] = test_human[["human_miss_1","human_miss_2"]].mean(axis=1)
+test_human["avg_human_steps"] = test_human[["human_steps_1","human_steps_2"]].mean(axis=1)
+test_human["avg_human_error_rate"] = test_human["avg_human_miss"]/test_human["avg_human_steps"]*100
 #merge the computational and human score dataframes
 all_score = score_df.merge(test_human,on=["subject","date","run","limb"])
 #drop the empty rows (should just be the rows with the side of the rat that is further away)
 all_score = all_score.dropna(axis=0)
 
-all_score.to_csv("/home/ml/Documents/methods_comparison_RN50_inflection.csv")
+all_score.to_csv("/home/ml/Documents/2Human_inflection_scores_"+dt.datetime.today().strftime('%Y-%m-%d')+"_3.csv")
 
 exclude_df  = pd.DataFrame(excluded_scores,columns=score_cols)
 exclude_df["date"] = pd.to_datetime(exclude_df["date"])
 
 comb_ex_df = exclude_df.merge(test_human,on=["subject","date","run","limb"])
 comb_ex_df = comb_ex_df.dropna(axis=0)
-comb_ex_df.to_csv("/home/ml/Documents/methods_excluded_inflection.csv")
+comb_ex_df.to_csv("/home/ml/Documents/excluded_crossings_inflection.csv")
 
 print("Score calculation and comparison done. Working on graphs")
-
+'''
 
 
 calcs=[]
@@ -408,4 +423,4 @@ for limb in limbs:
     plt.legend()
     plt.gca().invert_xaxis()
     plt.savefig("/home/ml/Documents/methods_figures/inflection_avg/slips_"+name+'.png')
-print("All done")
+print("All done")'''
