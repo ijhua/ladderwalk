@@ -246,7 +246,7 @@ score_df = pd.DataFrame(scores,columns=score_cols)
 score_df["date"] = pd.to_datetime(score_df["date"])
 
 #open the file of manual scores
-test_human = pd.read_csv("/home/ml/Downloads/ICC_prelim_5-4-2020.csv")
+test_human = pd.read_csv("/home/ml/Downloads/LW_Manual_scores_for_ICC_2020-05-20.csv")
 #date column into datetime format
 test_human['date'] = pd.to_datetime(test_human['date'])
 test_human["avg_human_hit"] = test_human[["human_hit_1","human_hit_2"]].mean(axis=1)
@@ -254,16 +254,16 @@ test_human["avg_human_miss"] = test_human[["human_miss_1","human_miss_2"]].mean(
 test_human["avg_human_steps"] = test_human[["human_steps_1","human_steps_2"]].mean(axis=1)
 test_human["avg_human_error_rate"] = test_human["avg_human_miss"]/test_human["avg_human_steps"]*100
 #merge the computational and human score dataframes
-all_score = score_df.merge(test_human,on=["subject","date","run","limb"])
+all_score = score_df.merge(test_human,on=["subject","date","run","limb","injury"])
 #drop the empty rows (should just be the rows with the side of the rat that is further away)
 all_score = all_score.dropna(axis=0)
 
-all_score.to_csv("/home/ml/Documents/2Human_inflection_scores_"+dt.datetime.today().strftime('%Y-%m-%d')+"_3.csv")
+all_score.to_csv("/home/ml/Documents/allH_comp_scores_"+dt.datetime.today().strftime('%Y-%m-%d')+".csv")
 
 exclude_df  = pd.DataFrame(excluded_scores,columns=score_cols)
 exclude_df["date"] = pd.to_datetime(exclude_df["date"])
 
-comb_ex_df = exclude_df.merge(test_human,on=["subject","date","run","limb"])
+comb_ex_df = exclude_df.merge(test_human,on=["subject","date","run","limb",'injury'])
 comb_ex_df = comb_ex_df.dropna(axis=0)
 comb_ex_df.to_csv("/home/ml/Documents/excluded_crossings_inflection.csv")
 
